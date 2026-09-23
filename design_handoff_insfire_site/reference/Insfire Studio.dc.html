@@ -1,0 +1,1109 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Instrument+Serif:ital@0;1&family=Space+Grotesk:wght@300;400;500;600;700&family=DM+Sans:wght@300;400;500;700&family=Archivo:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+html{scroll-behavior:smooth}
+body{margin:0;background:#0a0a0a;color:#f2f0ec;font-family:Poppins,system-ui,sans-serif;-webkit-font-smoothing:antialiased;overflow-x:hidden;
+--accent:#FF5A1F;--ink:#0a0a0a;--paper:#f3f1ed;--hf:Poppins,sans-serif;--bf:Poppins,sans-serif;--hs:1;--hls:-0.032em;--bs:16px;--cw:1560px;--ss:1;--pad:clamp(16px,4vw,56px);--r:0px}
+a{color:var(--accent);text-decoration:none}
+a:hover{color:#fff}
+*{box-sizing:border-box}
+::selection{background:var(--accent);color:#0a0a0a}
+:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+input,textarea,select,button{font-family:Poppins,system-ui,sans-serif}
+@keyframes insSlowZoom{from{transform:scale(1)}to{transform:scale(1.08)}}
+@keyframes insSpark{0%,100%{opacity:.25}50%{opacity:.85}}
+@media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
+</style>
+</helmet>
+
+<template id="__bundler_thumbnail"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" fill="#0a0a0a"/><text x="50" y="62" font-family="Poppins,sans-serif" font-size="34" font-weight="700" fill="#FF5A1F" text-anchor="middle">IN</text></svg></template>
+
+<sc-if value="{{ isHome }}" hint-placeholder-val="{{ true }}">
+<div style="display:flex;flex-direction:column">
+<header style="order:0;position:{{ navPosition }};top:0;left:0;right:0;z-index:60;display:flex;align-items:center;justify-content:space-between;gap:20px;padding:18px var(--pad);transition:background .5s,color .5s,border-color .5s;background:rgba(10,10,10,.72);backdrop-filter:blur(14px);border-bottom:1px solid rgba(255,255,255,.08)" ref="{{ navRef }}">
+<a href="#top" style="font-weight:700;letter-spacing:.24em;font-size:15px;color:inherit;font-family:var(--hf)">{{ brandName }}</a>
+<nav style="display:flex;gap:clamp(14px,2.4vw,34px);font-weight:500;font-size:11.5px;letter-spacing:.18em;text-transform:uppercase;color:inherit;opacity:.82">
+<sc-for list="{{ navItems }}" as="n" hint-placeholder-count="4">
+<a href="{{ n.href }}" style="color:inherit" style-hover="color:var(--accent)">{{ n.label }}</a>
+</sc-for>
+</nav>
+<a href="{{ navCta.href }}" style="display:none;align-items:center;gap:9px;font-weight:600;font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;color:inherit;border-bottom:1px solid var(--accent);padding-bottom:4px" style-hover="color:var(--accent)" ref="{{ navCtaRef }}">{{ navCta.label }} <span style="color:var(--accent)">&rarr;</span></a>
+</header>
+
+<section id="top" data-nav="dark" style="order:1;position:relative;min-height:94vh;display:flex;flex-direction:column;justify-content:flex-end;padding:140px var(--pad) calc(34px * var(--ss));overflow:hidden;background:#0a0a0a">
+<div style="position:absolute;inset:0;overflow:hidden">
+<sc-if value="{{ hero.hasMedia }}" hint-placeholder-val="{{ false }}">
+<div style="position:absolute;inset:0">{{ hero.mediaEl }}</div>
+</sc-if>
+<sc-if value="{{ hero.noMedia }}" hint-placeholder-val="{{ true }}">
+<div style="position:absolute;inset:0">
+<div style="position:absolute;inset:0;background:repeating-linear-gradient(122deg,#131313 0 14px,#1a1a1a 14px 28px);animation:insSlowZoom 22s ease-in-out infinite alternate"></div>
+<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center"><span style="font-family:ui-monospace,Menlo,monospace;font-size:11px;letter-spacing:.3em;color:rgba(255,255,255,.28);text-transform:uppercase">upload hero image or video in CMS &rarr; Hero</span></div>
+</div>
+</sc-if>
+<div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(10,10,10,{{ hero.o1 }}) 0%,rgba(10,10,10,{{ hero.o2 }}) 42%,rgba(10,10,10,.94) 100%)"></div>
+<div style="position:absolute;left:-10%;top:35%;width:60%;height:40%;background:radial-gradient(closest-side,rgba(255,90,31,.22),transparent);filter:blur(10px);animation:insSpark 9s ease-in-out infinite"></div>
+</div>
+<div style="position:relative;max-width:var(--cw);width:100%;margin:0 auto">
+<div data-reveal style="font-family:ui-monospace,Menlo,monospace;font-size:11px;letter-spacing:.34em;text-transform:uppercase;color:var(--accent);margin-bottom:clamp(18px,3vw,34px)">{{ hero.eyebrow }}</div>
+<h1 data-reveal style="margin:0;font-family:var(--hf);font-weight:700;font-size:calc(clamp(44px,11vw,168px) * var(--hs));line-height:.88;letter-spacing:var(--hls);text-wrap:balance">{{ hero.line1 }}<br>{{ hero.line2 }}<span style="color:var(--accent)">.</span></h1>
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr));gap:clamp(22px,4vw,64px);align-items:end;margin-top:clamp(28px,5vw,64px)">
+<p data-reveal style="margin:0;font-size:calc(var(--bs) * 1.25);line-height:1.5;color:rgba(242,240,236,.82);max-width:30ch;font-weight:300">{{ hero.sub }}</p>
+<div data-reveal style="display:flex;flex-wrap:wrap;gap:14px;align-items:center">
+<a href="{{ hero.cta1href }}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:10px;background:var(--accent);color:#0a0a0a;font-weight:600;font-size:12.5px;letter-spacing:.14em;text-transform:uppercase;padding:17px 26px;min-height:48px;border-radius:var(--r);transition:transform .35s cubic-bezier(.2,.8,.2,1),background .3s" style-hover="background:#fff;transform:translateY(-2px)">{{ hero.cta1 }} <span>&rarr;</span></a>
+<a href="{{ hero.cta2href }}" style="display:inline-flex;align-items:center;gap:10px;color:#f2f0ec;font-weight:500;font-size:12.5px;letter-spacing:.14em;text-transform:uppercase;padding:17px 4px;min-height:48px;border-bottom:1px solid rgba(255,255,255,.35);transition:border-color .3s,color .3s" style-hover="color:var(--accent);border-color:var(--accent)">{{ hero.cta2 }} <span>&rarr;</span></a>
+</div>
+<div data-reveal style="font-family:ui-monospace,Menlo,monospace;font-size:10.5px;letter-spacing:.22em;text-transform:uppercase;color:rgba(242,240,236,.42);justify-self:end;text-align:right;line-height:2">{{ hero.cat1 }}<br>{{ hero.cat2 }}</div>
+</div>
+</div>
+</section>
+
+<section id="why" data-nav="dark" style="order:{{ sec.why.order }};display:{{ sec.why.display }};background:#0a0a0a;padding:calc(clamp(88px,13vw,190px) * var(--ss)) var(--pad);border-top:1px solid rgba(255,255,255,.07)">
+<div style="max-width:var(--cw);margin:0 auto">
+<div style="font-family:ui-monospace,Menlo,monospace;font-size:10.5px;letter-spacing:.3em;text-transform:uppercase;color:rgba(242,240,236,.38);margin-bottom:clamp(34px,6vw,74px);display:{{ numbersDisplay }}">{{ sec.why.num }} &mdash; {{ sec.why.label }}</div>
+<h2 data-reveal style="margin:0;font-family:var(--hf);font-weight:700;font-size:calc(clamp(30px,6.4vw,92px) * var(--hs));line-height:1.02;letter-spacing:var(--hls);max-width:22ch">{{ problem.h1 }}<br><span style="color:rgba(242,240,236,.34)">{{ problem.h2 }}</span></h2>
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:clamp(28px,5vw,90px);margin-top:clamp(48px,7vw,110px);align-items:start">
+<div data-reveal style="display:flex;flex-direction:column;gap:18px;max-width:46ch">
+<p style="margin:0;font-size:calc(var(--bs) * 1.1);line-height:1.65;color:rgba(242,240,236,.72);font-weight:300">{{ problem.intro }}</p>
+<div style="display:grid;gap:10px;font-size:calc(var(--bs) * 1.1);line-height:1.5;font-weight:300;border-left:1px solid var(--accent);padding-left:22px">
+<span>{{ problem.b1 }}</span><span>{{ problem.b2 }}</span><span>{{ problem.b3 }}</span>
+</div>
+<p style="margin:0;font-size:calc(var(--bs) * 1.1);line-height:1.65;color:rgba(242,240,236,.72);font-weight:300">{{ problem.outro }}</p>
+</div>
+<div data-reveal style="display:grid;gap:clamp(6px,1vw,14px);font-family:var(--hf);font-weight:700;font-size:calc(clamp(26px,4.6vw,64px) * var(--hs));line-height:1;letter-spacing:var(--hls);justify-items:start">
+<span>{{ problem.k1 }}</span><span style="color:rgba(242,240,236,.5)">{{ problem.k2 }}</span><span style="color:var(--accent)">{{ problem.k3 }}</span>
+</div>
+</div>
+</div>
+</section>
+
+<section id="services" data-nav="light" style="order:{{ sec.services.order }};display:{{ sec.services.display }};background:var(--paper);color:var(--ink);padding:calc(clamp(88px,13vw,190px) * var(--ss)) var(--pad)">
+<div style="max-width:var(--cw);margin:0 auto">
+<div style="display:flex;flex-wrap:wrap;gap:24px;justify-content:space-between;align-items:baseline;margin-bottom:clamp(40px,6vw,86px)">
+<h2 data-reveal style="margin:0;font-family:var(--hf);font-weight:700;font-size:calc(clamp(28px,5.4vw,76px) * var(--hs));line-height:1;letter-spacing:var(--hls);max-width:18ch">{{ servicesTitle }}</h2>
+<p data-reveal style="margin:0;font-size:var(--bs);line-height:1.6;color:rgba(10,10,10,.6);max-width:34ch;font-weight:300">{{ servicesIntro }}</p>
+</div>
+<div style="display:grid;border-top:1px solid rgba(10,10,10,.14)">
+<sc-for list="{{ services }}" as="s" hint-placeholder-count="3">
+<article data-reveal style="display:grid;grid-template-columns:minmax(0,auto) minmax(0,1.2fr) minmax(0,1fr);gap:clamp(16px,4vw,60px);align-items:start;padding:clamp(26px,4vw,52px) 0;border-bottom:1px solid rgba(10,10,10,.14);transition:background .4s" style-hover="background:rgba(10,10,10,.03)">
+<span style="font-weight:600;font-size:clamp(13px,1.2vw,15px);letter-spacing:.1em;color:var(--accent);font-family:ui-monospace,Menlo,monospace">{{ s.num }}</span>
+<h3 style="margin:0;font-family:var(--hf);font-weight:700;font-size:calc(clamp(30px,5vw,68px) * var(--hs));line-height:.95;letter-spacing:var(--hls)">{{ s.title }}</h3>
+<div style="display:grid;gap:8px;font-size:calc(var(--bs) * .92);line-height:1.55;color:rgba(10,10,10,.66)">
+<sc-for list="{{ s.items }}" as="i" hint-placeholder-count="4"><span>{{ i.label }}</span></sc-for>
+</div>
+</article>
+</sc-for>
+</div>
+</div>
+</section>
+
+<section id="work" data-nav="dark" style="order:{{ sec.work.order }};display:{{ sec.work.display }};background:#0a0a0a;padding:calc(clamp(88px,13vw,190px) * var(--ss)) var(--pad)">
+<div style="max-width:var(--cw);margin:0 auto">
+<div style="display:flex;flex-wrap:wrap;gap:20px;justify-content:space-between;align-items:baseline;margin-bottom:clamp(36px,5vw,72px)">
+<h2 data-reveal style="margin:0;font-family:var(--hf);font-weight:700;font-size:calc(clamp(28px,5.4vw,76px) * var(--hs));line-height:1;letter-spacing:var(--hls)">{{ workTitle }}<span style="color:var(--accent)">.</span></h2>
+<span style="font-family:ui-monospace,Menlo,monospace;font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:rgba(242,240,236,.55)">{{ workCount }}</span>
+</div>
+<div style="display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:clamp(14px,2.2vw,34px)">
+<sc-for list="{{ workItems }}" as="p" hint-placeholder-count="4">
+<a onClick="{{ p.open }}" data-reveal style="grid-column:span {{ p.span }};cursor:pointer;display:block;color:inherit;align-self:{{ p.align }}">
+<div style="position:relative;overflow:hidden;border-radius:var(--r);aspect-ratio:{{ p.ratio }};background:repeating-linear-gradient(118deg,#141414 0 13px,#1c1c1c 13px 26px)" style-hover="outline:1px solid var(--accent)">
+<sc-if value="{{ p.hasMedia }}" hint-placeholder-val="{{ false }}">{{ p.mediaEl }}</sc-if>
+<sc-if value="{{ p.noMedia }}" hint-placeholder-val="{{ true }}">
+<span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:14px;font-family:ui-monospace,Menlo,monospace;font-size:10.5px;letter-spacing:.26em;color:rgba(255,255,255,.26);text-transform:uppercase">{{ p.placeholder }}</span>
+</sc-if>
+<sc-if value="{{ p.featured }}" hint-placeholder-val="{{ false }}">
+<span style="position:absolute;left:18px;top:18px;background:var(--accent);color:#0a0a0a;font-family:ui-monospace,Menlo,monospace;font-size:10px;letter-spacing:.18em;padding:6px 10px;text-transform:uppercase">Featured</span>
+</sc-if>
+</div>
+<div style="display:flex;flex-wrap:wrap;gap:14px;justify-content:space-between;align-items:baseline;padding-top:15px">
+<div>
+<div style="font-family:ui-monospace,Menlo,monospace;font-size:10.5px;letter-spacing:.24em;text-transform:uppercase;color:{{ p.metaColor }}">{{ p.meta }}</div>
+<h3 style="margin:8px 0 0;font-family:var(--hf);font-weight:{{ p.weight }};font-size:calc({{ p.titleSize }} * var(--hs));line-height:1.12;letter-spacing:var(--hls)">{{ p.title }}</h3>
+</div>
+<span style="font-family:ui-monospace,Menlo,monospace;font-size:11px;color:rgba(242,240,236,.45);letter-spacing:.14em">{{ p.stamp }}</span>
+</div>
+</a>
+</sc-for>
+</div>
+</div>
+</section>
+
+<section id="about" data-nav="light" style="order:{{ sec.about.order }};display:{{ sec.about.display }};background:var(--paper);color:var(--ink);padding:calc(clamp(88px,13vw,190px) * var(--ss)) var(--pad)">
+<div style="max-width:var(--cw);margin:0 auto;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));gap:clamp(32px,6vw,96px);align-items:start">
+<div data-reveal>
+<h2 style="margin:0;font-family:var(--hf);font-weight:700;font-size:calc(clamp(30px,5.6vw,80px) * var(--hs));line-height:.98;letter-spacing:var(--hls)">{{ about.l1 }}<br>{{ about.l2 }}<br>{{ about.l3 }} <span style="color:var(--accent)">{{ about.l4 }}</span></h2>
+<p style="margin:clamp(24px,3vw,40px) 0 0;font-family:'Instrument Serif',Georgia,serif;font-size:calc(var(--bs) * 1.6);line-height:1.35;color:rgba(10,10,10,.78);max-width:32ch">{{ about.serif }}</p>
+</div>
+<div data-reveal style="display:grid;gap:clamp(22px,3vw,38px)">
+<p style="margin:0;font-size:calc(var(--bs) * 1.1);line-height:1.65;color:rgba(10,10,10,.68);font-weight:300;max-width:44ch">{{ about.body }}</p>
+<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:clamp(10px,1.6vw,22px);border-top:1px solid rgba(10,10,10,.16);padding-top:26px">
+<sc-for list="{{ stats }}" as="st" hint-placeholder-count="3">
+<div><div style="font-family:var(--hf);font-weight:700;font-size:calc(clamp(22px,2.6vw,40px) * var(--hs));letter-spacing:var(--hls)">{{ st.value }}<span style="color:var(--accent)">{{ st.suffix }}</span></div><div style="font-family:ui-monospace,Menlo,monospace;font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:rgba(10,10,10,.5);margin-top:6px">{{ st.label }}</div></div>
+</sc-for>
+</div>
+</div>
+</div>
+</section>
+
+<section id="team" data-nav="light" style="order:{{ sec.team.order }};display:{{ sec.team.display }};background:var(--paper);color:var(--ink);padding:0 var(--pad) calc(clamp(88px,13vw,170px) * var(--ss))">
+<div style="max-width:var(--cw);margin:0 auto">
+<div style="display:flex;flex-wrap:wrap;gap:18px;justify-content:space-between;align-items:baseline;border-top:1px solid rgba(10,10,10,.16);padding-top:clamp(30px,4vw,56px);margin-bottom:clamp(24px,3vw,44px)">
+<h2 data-reveal style="margin:0;font-family:var(--hf);font-weight:700;font-size:calc(clamp(26px,4.4vw,60px) * var(--hs));letter-spacing:var(--hls);line-height:1">{{ teamTitle }}</h2>
+<p style="margin:0;font-size:calc(var(--bs) * .9);color:rgba(10,10,10,.58);max-width:30ch;font-weight:300">{{ teamIntro }}</p>
+</div>
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,190px),1fr));gap:clamp(12px,2vw,26px)">
+<sc-for list="{{ team }}" as="t" hint-placeholder-count="4">
+<div data-reveal>
+<div style="position:relative;aspect-ratio:3/4;border-radius:var(--r);overflow:hidden;background:repeating-linear-gradient(118deg,#e3e0da 0 13px,#d9d6cf 13px 26px)">
+<sc-if value="{{ t.hasMedia }}" hint-placeholder-val="{{ false }}">{{ t.mediaEl }}</sc-if>
+<sc-if value="{{ t.noMedia }}" hint-placeholder-val="{{ true }}"><span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:ui-monospace,Menlo,monospace;font-size:10px;letter-spacing:.2em;color:rgba(10,10,10,.4);text-transform:uppercase">portrait 3:4</span></sc-if>
+</div>
+<div style="padding-top:12px;font-weight:500;font-size:calc(var(--bs) * .94)">{{ t.name }}</div>
+<div style="font-family:ui-monospace,Menlo,monospace;font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:rgba(10,10,10,.5);margin-top:4px">{{ t.role }}</div>
+</div>
+</sc-for>
+</div>
+</div>
+</section>
+
+<section id="whyus" data-nav="dark" style="order:{{ sec.whyus.order }};display:{{ sec.whyus.display }};background:#0a0a0a;padding:calc(clamp(88px,13vw,190px) * var(--ss)) var(--pad)">
+<div style="max-width:var(--cw);margin:0 auto">
+<h2 data-reveal style="margin:0 0 clamp(38px,6vw,84px);font-family:var(--hf);font-weight:700;font-size:calc(clamp(26px,4.4vw,60px) * var(--hs));letter-spacing:var(--hls);line-height:1">{{ whyusTitle }}</h2>
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:clamp(24px,3.4vw,54px)">
+<sc-for list="{{ pillars }}" as="p" hint-placeholder-count="4">
+<div data-reveal style="border-top:1px solid {{ p.border }};padding-top:20px">
+<h3 style="margin:0;font-family:var(--hf);font-weight:600;font-size:calc(clamp(18px,2vw,28px) * var(--hs));letter-spacing:var(--hls)">{{ p.title }}</h3>
+<p style="margin:14px 0 0;font-size:var(--bs);line-height:1.6;color:rgba(242,240,236,.62);font-weight:300">{{ p.body }}</p>
+</div>
+</sc-for>
+</div>
+</div>
+</section>
+
+<section id="insights" data-nav="dark" style="order:{{ sec.insights.order }};display:{{ sec.insights.display }};background:#0a0a0a;padding:0 var(--pad) calc(clamp(88px,13vw,180px) * var(--ss))">
+<div style="max-width:var(--cw);margin:0 auto">
+<div style="display:flex;flex-wrap:wrap;gap:18px;justify-content:space-between;align-items:baseline;border-top:1px solid rgba(255,255,255,.12);padding-top:clamp(30px,4vw,56px);margin-bottom:clamp(22px,3vw,40px)">
+<h2 data-reveal style="margin:0;font-family:var(--hf);font-weight:700;font-size:calc(clamp(26px,4.4vw,60px) * var(--hs));letter-spacing:var(--hls);line-height:1">{{ insightsTitle }}</h2>
+</div>
+<div style="display:grid">
+<sc-for list="{{ insights }}" as="a" hint-placeholder-count="3">
+<a href="{{ a.href }}" data-reveal style="display:grid;grid-template-columns:minmax(0,auto) minmax(0,3fr) minmax(0,1fr);gap:clamp(14px,3vw,44px);align-items:center;padding:clamp(20px,2.6vw,34px) 0;border-bottom:1px solid rgba(255,255,255,.12);color:inherit" style-hover="background:rgba(255,255,255,.03)">
+<span style="font-family:ui-monospace,Menlo,monospace;font-size:10.5px;letter-spacing:.2em;color:var(--accent);text-transform:uppercase">{{ a.category }}</span>
+<h3 style="margin:0;font-family:var(--hf);font-weight:400;font-size:calc(clamp(17px,2.2vw,32px) * var(--hs));line-height:1.18;letter-spacing:var(--hls)">{{ a.title }}</h3>
+<span style="font-family:ui-monospace,Menlo,monospace;font-size:10.5px;color:rgba(242,240,236,.42);letter-spacing:.14em;text-align:right">{{ a.date }}</span>
+</a>
+</sc-for>
+</div>
+</div>
+</section>
+
+<section id="contact" data-nav="dark" style="order:97;position:relative;overflow:hidden;background:#0a0a0a;padding:calc(clamp(96px,15vw,220px) * var(--ss)) var(--pad);border-top:1px solid rgba(255,255,255,.08)">
+<div style="position:absolute;left:4%;top:6%;width:46%;height:58%;background:radial-gradient(closest-side,rgba(255,90,31,.18),transparent);animation:insSpark 11s ease-in-out infinite"></div>
+<div style="position:relative;max-width:var(--cw);margin:0 auto;text-align:center;display:grid;justify-items:center;gap:clamp(22px,3vw,40px)">
+<h2 data-reveal style="margin:0;font-family:var(--hf);font-weight:700;font-size:calc(clamp(32px,8vw,124px) * var(--hs));line-height:.94;letter-spacing:var(--hls)">{{ cta.l1 }}<br>{{ cta.l2 }} <span style="color:var(--accent)">{{ cta.l3 }}</span></h2>
+<p data-reveal style="margin:0;font-size:calc(var(--bs) * 1.2);color:rgba(242,240,236,.7);font-weight:300">{{ cta.sub }}</p>
+<a data-reveal href="{{ cta.href }}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:12px;background:var(--accent);color:#0a0a0a;font-weight:600;font-size:13px;letter-spacing:.14em;text-transform:uppercase;padding:19px 30px;min-height:50px;border-radius:var(--r);transition:transform .35s cubic-bezier(.2,.8,.2,1),background .3s" style-hover="background:#fff;transform:translateY(-2px)">{{ cta.label }} <span>&rarr;</span></a>
+<div style="font-family:ui-monospace,Menlo,monospace;font-size:10.5px;letter-spacing:.26em;text-transform:uppercase;color:rgba(242,240,236,.45)">{{ cta.location }}</div>
+</div>
+</section>
+
+<footer data-nav="dark" style="order:98;background:#0a0a0a;border-top:1px solid rgba(255,255,255,.1);padding:calc(clamp(48px,7vw,90px) * var(--ss)) var(--pad) 34px">
+<div style="max-width:var(--cw);margin:0 auto;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,180px),1fr));gap:clamp(28px,4vw,60px);align-items:start">
+<div>
+<div style="font-family:var(--hf);font-weight:700;letter-spacing:.24em;font-size:15px">{{ brandName }}</div>
+<div style="font-family:'Instrument Serif',Georgia,serif;font-size:calc(var(--bs) * 1.2);color:rgba(242,240,236,.6);margin-top:10px">{{ footer.tagline }}</div>
+</div>
+<nav style="display:grid;gap:11px;font-size:12.5px;letter-spacing:.1em;text-transform:uppercase;font-weight:500">
+<sc-for list="{{ footerNav }}" as="n" hint-placeholder-count="4">
+<a href="{{ n.href }}" style="color:rgba(242,240,236,.7)" style-hover="color:var(--accent)">{{ n.label }}</a>
+</sc-for>
+</nav>
+<nav style="display:grid;gap:11px;font-size:12.5px;letter-spacing:.1em;text-transform:uppercase;font-weight:500">
+<sc-for list="{{ socials }}" as="s" hint-placeholder-count="2">
+<a href="{{ s.url }}" target="_blank" rel="noopener" style="color:rgba(242,240,236,.7)" style-hover="color:var(--accent)">{{ s.label }}</a>
+</sc-for>
+</nav>
+<div style="display:grid;gap:11px;font-size:calc(var(--bs) * .85);color:rgba(242,240,236,.6);font-weight:300">
+<a href="{{ footer.mailto }}" style="color:rgba(242,240,236,.85)" style-hover="color:var(--accent)">{{ footer.email }}</a>
+<span>{{ footer.location }}</span>
+</div>
+</div>
+<div style="max-width:var(--cw);margin:clamp(34px,5vw,64px) auto 0;display:flex;flex-wrap:wrap;gap:12px;justify-content:space-between;font-family:ui-monospace,Menlo,monospace;font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:rgba(242,240,236,.35)">
+<span>{{ footer.copyright }}</span><span>{{ footer.note }}</span>
+</div>
+</footer>
+</div>
+</sc-if>
+
+<sc-if value="{{ isCase }}" hint-placeholder-val="{{ false }}">
+<div>
+<header style="position:sticky;top:0;z-index:60;display:flex;align-items:center;justify-content:space-between;padding:18px var(--pad);background:rgba(10,10,10,.78);backdrop-filter:blur(14px);border-bottom:1px solid rgba(255,255,255,.08)">
+<span onClick="{{ goHome }}" style="cursor:pointer;font-family:ui-monospace,Menlo,monospace;font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:rgba(242,240,236,.7)" style-hover="color:var(--accent)">&larr; All stories</span>
+<span onClick="{{ goHome }}" style="cursor:pointer;font-family:var(--hf);font-weight:700;letter-spacing:.24em;font-size:15px">{{ brandName }}</span>
+</header>
+<section style="position:relative;min-height:70vh;display:flex;align-items:flex-end;padding:110px var(--pad) clamp(34px,5vw,64px);overflow:hidden">
+<div style="position:absolute;inset:0;background:repeating-linear-gradient(118deg,#131313 0 14px,#1b1b1b 14px 28px)"></div>
+<sc-if value="{{ caseItem.hasMedia }}" hint-placeholder-val="{{ false }}">{{ caseItem.mediaEl }}</sc-if>
+<div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(10,10,10,.72),rgba(10,10,10,.35) 45%,rgba(10,10,10,.95))"></div>
+<div style="position:relative;max-width:var(--cw);width:100%;margin:0 auto">
+<div style="font-family:ui-monospace,Menlo,monospace;font-size:10.5px;letter-spacing:.3em;text-transform:uppercase;color:var(--accent);margin-bottom:22px">{{ caseItem.meta }}</div>
+<h1 style="margin:0;font-family:var(--hf);font-weight:700;font-size:calc(clamp(32px,7vw,104px) * var(--hs));line-height:.94;letter-spacing:var(--hls);max-width:20ch">{{ caseItem.title }}</h1>
+</div>
+</section>
+<section style="padding:calc(clamp(56px,8vw,120px) * var(--ss)) var(--pad);border-top:1px solid rgba(255,255,255,.08)">
+<div style="max-width:var(--cw);margin:0 auto;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:clamp(28px,5vw,80px)">
+<div style="display:grid;gap:clamp(38px,5vw,66px);max-width:60ch">
+<sc-for list="{{ caseItem.blocks }}" as="b" hint-placeholder-count="4">
+<div><div style="font-family:ui-monospace,Menlo,monospace;font-size:10.5px;letter-spacing:.28em;text-transform:uppercase;color:var(--accent);margin-bottom:14px">{{ b.label }}</div><p style="margin:0;font-size:calc(var(--bs) * 1.2);line-height:1.6;font-weight:300;color:rgba(242,240,236,.82)">{{ b.body }}</p></div>
+</sc-for>
+</div>
+<aside style="align-self:start;border-top:1px solid rgba(255,255,255,.16);padding-top:22px;display:grid;gap:18px;font-size:calc(var(--bs) * .9)">
+<sc-for list="{{ caseItem.details }}" as="d" hint-placeholder-count="4">
+<div><div style="font-family:ui-monospace,Menlo,monospace;font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:rgba(242,240,236,.45);margin-bottom:6px">{{ d.label }}</div>{{ d.value }}</div>
+</sc-for>
+</aside>
+</div>
+</section>
+</div>
+</sc-if>
+
+<sc-if value="{{ isCms }}" hint-placeholder-val="{{ false }}">
+<div style="min-height:100vh;display:grid;grid-template-columns:minmax(0,236px) minmax(0,1fr);background:#0d0d0d;font-family:Poppins,sans-serif">
+<aside style="border-right:1px solid rgba(255,255,255,.09);padding:24px 18px;display:grid;gap:22px;align-content:start;position:sticky;top:0;height:100vh;overflow:auto">
+<div style="font-weight:700;letter-spacing:.2em;font-size:13px">{{ brandName }} <span style="color:var(--accent)">CMS</span></div>
+<sc-for list="{{ navGroups }}" as="g" hint-placeholder-count="4">
+<div style="display:grid;gap:5px">
+<div style="font-family:ui-monospace,Menlo,monospace;font-size:9.5px;letter-spacing:.24em;text-transform:uppercase;color:rgba(242,240,236,.35);margin-bottom:4px">{{ g.title }}</div>
+<sc-for list="{{ g.items }}" as="item" hint-placeholder-count="5">
+<div onClick="{{ item.onClick }}" style="cursor:pointer;padding:9px 10px;font-size:13.5px;font-weight:500;background:{{ item.bg }};color:{{ item.fg }};border-left:2px solid {{ item.bar }}" style-hover="background:rgba(255,255,255,.06)">{{ item.label }}</div>
+</sc-for>
+</div>
+</sc-for>
+<div style="display:grid;gap:8px;border-top:1px solid rgba(255,255,255,.09);padding-top:16px">
+<span onClick="{{ exportConfig }}" style="cursor:pointer;padding:9px 10px;border:1px solid rgba(255,255,255,.18);font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;text-align:center" style-hover="border-color:var(--accent);color:var(--accent)">Export content</span>
+<label style="cursor:pointer;padding:9px 10px;border:1px solid rgba(255,255,255,.18);font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;text-align:center" style-hover="border-color:var(--accent);color:var(--accent)">Import content<input type="file" accept="application/json" onChange="{{ importConfig }}" style="display:none"></label>
+<span onClick="{{ resetConfig }}" style="cursor:pointer;padding:9px 10px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;text-align:center;color:rgba(242,240,236,.4)" style-hover="color:#ff6b6b">Reset to defaults</span>
+</div>
+</aside>
+
+<main style="padding:0 0 70px;min-width:0">
+<div style="display:flex;flex-wrap:wrap;gap:14px;align-items:center;justify-content:space-between;padding:18px clamp(16px,3vw,32px);border-bottom:1px solid rgba(255,255,255,.09);position:sticky;top:0;background:rgba(13,13,13,.94);backdrop-filter:blur(10px);z-index:10">
+<div style="display:flex;align-items:baseline;gap:12px;min-width:0"><h1 style="margin:0;font-weight:600;font-size:19px;letter-spacing:-.01em">{{ cmsTitle }}</h1><span style="font-family:ui-monospace,Menlo,monospace;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:rgba(242,240,236,.4)">{{ savedNote }}</span></div>
+<div style="display:flex;gap:10px">
+<span onClick="{{ goHome }}" style="cursor:pointer;display:inline-flex;align-items:center;min-height:38px;padding:0 16px;border:1px solid rgba(255,255,255,.2);font-size:12px;font-weight:500;letter-spacing:.08em;text-transform:uppercase" style-hover="border-color:var(--accent);color:var(--accent)">View site</span>
+<span onClick="{{ exportConfig }}" style="cursor:pointer;display:inline-flex;align-items:center;min-height:38px;padding:0 18px;background:var(--accent);color:#0a0a0a;font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase" style-hover="background:#fff">Publish</span>
+</div>
+</div>
+
+<div style="padding:clamp(18px,3vw,30px);max-width:1080px">
+<p style="margin:0 0 20px;font-size:13px;line-height:1.6;color:rgba(242,240,236,.5);max-width:70ch">{{ tabHelp }}</p>
+
+<sc-if value="{{ hasFields }}" hint-placeholder-val="{{ true }}">
+<div style="border:1px solid rgba(255,255,255,.09);padding:4px 18px 14px">
+<sc-for list="{{ fields }}" as="f" hint-placeholder-count="6">
+<div style="display:grid;gap:9px;padding:14px 0;border-bottom:1px solid rgba(255,255,255,.06)">
+<div style="display:flex;justify-content:space-between;gap:14px;align-items:baseline">
+<span style="font-size:13px;font-weight:500">{{ f.label }}</span>
+<span style="font-family:ui-monospace,Menlo,monospace;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:rgba(242,240,236,.35);text-align:right">{{ f.hint }}</span>
+</div>
+<sc-if value="{{ f.isText }}" hint-placeholder-val="{{ true }}">
+<input type="text" value="{{ f.value }}" onChange="{{ f.onChange }}" style="width:100%;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);color:#f2f0ec;padding:10px 12px;font-size:13.5px">
+</sc-if>
+<sc-if value="{{ f.isArea }}" hint-placeholder-val="{{ false }}">
+<textarea rows="3" value="{{ f.value }}" onChange="{{ f.onChange }}" style="width:100%;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);color:#f2f0ec;padding:10px 12px;font-size:13.5px;line-height:1.5;resize:vertical"></textarea>
+</sc-if>
+<sc-if value="{{ f.isColor }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;gap:10px;align-items:center">
+<input type="color" value="{{ f.value }}" onChange="{{ f.onChange }}" style="width:46px;height:34px;padding:0;background:none;border:1px solid rgba(255,255,255,.18);cursor:pointer">
+<input type="text" value="{{ f.value }}" onChange="{{ f.onChange }}" style="flex:1;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);color:#f2f0ec;padding:10px 12px;font-family:ui-monospace,Menlo,monospace;font-size:12.5px">
+</div>
+</sc-if>
+<sc-if value="{{ f.isRange }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;gap:14px;align-items:center">
+<input type="range" min="{{ f.min }}" max="{{ f.max }}" step="{{ f.step }}" value="{{ f.value }}" onChange="{{ f.onChange }}" style="flex:1;accent-color:var(--accent)">
+<span style="font-family:ui-monospace,Menlo,monospace;font-size:11.5px;min-width:70px;text-align:right;color:rgba(242,240,236,.7)">{{ f.display }}</span>
+</div>
+</sc-if>
+<sc-if value="{{ f.isSelect }}" hint-placeholder-val="{{ false }}">
+<select value="{{ f.value }}" onChange="{{ f.onChange }}" style="width:100%;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);color:#f2f0ec;padding:10px 12px;font-size:13.5px">
+<sc-for list="{{ f.options }}" as="o" hint-placeholder-count="3"><option value="{{ o.value }}">{{ o.label }}</option></sc-for>
+</select>
+</sc-if>
+<sc-if value="{{ f.isToggle }}" hint-placeholder-val="{{ false }}">
+<span onClick="{{ f.onChange }}" style="cursor:pointer;display:inline-flex;align-items:center;width:42px;height:24px;border-radius:12px;padding:2px;background:{{ f.tBg }};justify-content:{{ f.tJustify }}"><span style="width:20px;height:20px;border-radius:50%;background:{{ f.tKnob }}"></span></span>
+</sc-if>
+</div>
+</sc-for>
+</div>
+</sc-if>
+
+<sc-if value="{{ hasLists }}" hint-placeholder-val="{{ false }}">
+<div style="display:grid;gap:26px;margin-top:24px">
+<sc-for list="{{ lists }}" as="L" hint-placeholder-count="1">
+<div style="display:grid;gap:12px">
+<div style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between">
+<span style="font-family:ui-monospace,Menlo,monospace;font-size:10.5px;letter-spacing:.22em;text-transform:uppercase;color:rgba(242,240,236,.45)">{{ L.title }}</span>
+<sc-if value="{{ L.hasAdd }}" hint-placeholder-val="{{ false }}">
+<span onClick="{{ L.onAdd }}" style="cursor:pointer;padding:8px 14px;border:1px solid var(--accent);color:var(--accent);font-size:11.5px;font-weight:600;letter-spacing:.08em;text-transform:uppercase" style-hover="background:var(--accent);color:#0a0a0a">{{ L.addLabel }}</span>
+</sc-if>
+</div>
+<sc-for list="{{ L.rows }}" as="row" hint-placeholder-count="3">
+<div style="border:1px solid rgba(255,255,255,.09);padding:14px 16px;display:grid;gap:10px">
+<div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between">
+<span style="font-weight:600;font-size:13.5px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ row.heading }}</span>
+<span style="display:flex;gap:6px;align-items:center">
+<sc-if value="{{ row.canMove }}" hint-placeholder-val="{{ true }}">
+<span onClick="{{ row.up }}" style="cursor:pointer;width:28px;height:28px;display:inline-flex;align-items:center;justify-content:center;border:1px solid rgba(255,255,255,.14);font-size:12px" style-hover="border-color:var(--accent);color:var(--accent)">&uarr;</span>
+</sc-if>
+<sc-if value="{{ row.canMove }}" hint-placeholder-val="{{ true }}">
+<span onClick="{{ row.down }}" style="cursor:pointer;width:28px;height:28px;display:inline-flex;align-items:center;justify-content:center;border:1px solid rgba(255,255,255,.14);font-size:12px" style-hover="border-color:var(--accent);color:var(--accent)">&darr;</span>
+</sc-if>
+<sc-if value="{{ row.canRemove }}" hint-placeholder-val="{{ true }}">
+<span onClick="{{ row.remove }}" style="cursor:pointer;width:28px;height:28px;display:inline-flex;align-items:center;justify-content:center;border:1px solid rgba(255,255,255,.14);font-size:14px;color:rgba(242,240,236,.55)" style-hover="border-color:#ff6b6b;color:#ff6b6b">&times;</span>
+</sc-if>
+</span>
+</div>
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr));gap:12px">
+<sc-for list="{{ row.fields }}" as="f" hint-placeholder-count="3">
+<div style="display:grid;gap:7px;align-content:start">
+<div style="display:flex;justify-content:space-between;gap:10px;align-items:baseline">
+<span style="font-family:ui-monospace,Menlo,monospace;font-size:9.5px;letter-spacing:.18em;text-transform:uppercase;color:rgba(242,240,236,.42)">{{ f.label }}</span>
+</div>
+<sc-if value="{{ f.isText }}" hint-placeholder-val="{{ true }}">
+<input type="text" value="{{ f.value }}" onChange="{{ f.onChange }}" style="width:100%;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);color:#f2f0ec;padding:9px 11px;font-size:13px">
+</sc-if>
+<sc-if value="{{ f.isArea }}" hint-placeholder-val="{{ false }}">
+<textarea rows="3" value="{{ f.value }}" onChange="{{ f.onChange }}" style="width:100%;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);color:#f2f0ec;padding:9px 11px;font-size:13px;line-height:1.5;resize:vertical"></textarea>
+</sc-if>
+<sc-if value="{{ f.isSelect }}" hint-placeholder-val="{{ false }}">
+<select value="{{ f.value }}" onChange="{{ f.onChange }}" style="width:100%;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);color:#f2f0ec;padding:9px 11px;font-size:13px">
+<sc-for list="{{ f.options }}" as="o" hint-placeholder-count="2"><option value="{{ o.value }}">{{ o.label }}</option></sc-for>
+</select>
+</sc-if>
+<sc-if value="{{ f.isToggle }}" hint-placeholder-val="{{ false }}">
+<span onClick="{{ f.onChange }}" style="cursor:pointer;display:inline-flex;align-items:center;width:42px;height:24px;border-radius:12px;padding:2px;background:{{ f.tBg }};justify-content:{{ f.tJustify }}"><span style="width:20px;height:20px;border-radius:50%;background:{{ f.tKnob }}"></span></span>
+</sc-if>
+</div>
+</sc-for>
+</div>
+</div>
+</sc-for>
+</div>
+</sc-for>
+</div>
+</sc-if>
+
+<sc-if value="{{ isMediaTab }}" hint-placeholder-val="{{ false }}">
+<div>
+<div style="display:flex;flex-wrap:wrap;gap:12px;align-items:baseline;justify-content:space-between;margin-bottom:14px">
+<span style="font-family:ui-monospace,Menlo,monospace;font-size:10.5px;letter-spacing:.22em;text-transform:uppercase;color:rgba(242,240,236,.45)">Website media slots &mdash; {{ slotSummary }}</span>
+</div>
+<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,230px),1fr));gap:14px;margin-bottom:30px">
+<sc-for list="{{ slotList }}" as="sl" hint-placeholder-count="8">
+<div style="border:1px solid {{ sl.border }};display:grid">
+<label style="position:relative;display:block;cursor:pointer;aspect-ratio:{{ sl.ratio }};background:repeating-linear-gradient(118deg,#1b1b1b 0 10px,#232323 10px 20px);overflow:hidden">
+{{ sl.thumbEl }}
+<span style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;text-align:center;padding:12px;background:{{ sl.scrim }}">
+<span style="font-family:ui-monospace,Menlo,monospace;font-size:9.5px;letter-spacing:.2em;text-transform:uppercase;color:{{ sl.tagColor }}">{{ sl.tag }}</span>
+<span style="font-size:11px;color:rgba(242,240,236,.55)">{{ sl.action }}</span>
+</span>
+<input type="file" accept="image/*,video/*" onChange="{{ sl.upload }}" style="display:none">
+</label>
+<div style="padding:10px 11px;display:grid;gap:8px">
+<div style="font-size:12.5px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ sl.label }}</div>
+<div style="font-family:ui-monospace,Menlo,monospace;font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:rgba(242,240,236,.38)">{{ sl.hint }}</div>
+<select value="{{ sl.value }}" onChange="{{ sl.onPick }}" style="width:100%;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);color:#f2f0ec;padding:7px 9px;font-size:12px">
+<sc-for list="{{ sl.options }}" as="o" hint-placeholder-count="2"><option value="{{ o.value }}">{{ o.label }}</option></sc-for>
+</select>
+</div>
+</div>
+</sc-for>
+</div>
+<label onDragOver="{{ onDragOver }}" onDrop="{{ onDrop }}" style="display:block;cursor:pointer;border:1px dashed {{ dropBorder }};padding:44px 20px;text-align:center;margin-bottom:20px;background:{{ dropBg }}">
+<div style="font-weight:500;font-size:15px">Drop images or video here &mdash; or click to choose files</div>
+<div style="font-family:ui-monospace,Menlo,monospace;font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:rgba(242,240,236,.42);margin-top:9px">jpg &middot; png &middot; webp &middot; svg &middot; mp4 &middot; webm &mdash; fills the empty slots above in order</div>
+<input type="file" multiple="{{ true }}" accept="image/*,video/*" onChange="{{ onPickFiles }}" style="display:none">
+</label>
+<div style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;margin-bottom:14px">
+<span style="font-family:ui-monospace,Menlo,monospace;font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;color:rgba(242,240,236,.45)">{{ mediaSummary }}</span>
+</div>
+<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,200px),1fr));gap:14px">
+<sc-for list="{{ mediaList }}" as="m" hint-placeholder-count="4">
+<div style="border:1px solid rgba(255,255,255,.09)">
+<div style="position:relative;aspect-ratio:4/3;background:repeating-linear-gradient(118deg,#1b1b1b 0 10px,#232323 10px 20px);overflow:hidden">
+{{ m.thumbEl }}
+<span style="position:absolute;left:8px;top:8px;font-family:ui-monospace,Menlo,monospace;font-size:9px;letter-spacing:.14em;text-transform:uppercase;background:rgba(10,10,10,.72);padding:3px 6px;color:rgba(242,240,236,.75)">{{ m.kind }}</span>
+</div>
+<div style="padding:10px 11px;display:grid;gap:8px">
+<div style="font-family:ui-monospace,Menlo,monospace;font-size:11px;color:rgba(242,240,236,.72);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ m.name }}</div>
+<div style="font-size:11px;color:rgba(242,240,236,.42)">{{ m.size }}</div>
+<input type="text" value="{{ m.alt }}" onChange="{{ m.setAlt }}" placeholder="alt text" style="width:100%;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);color:#f2f0ec;padding:7px 9px;font-size:12px">
+<span onClick="{{ m.remove }}" style="cursor:pointer;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:rgba(242,240,236,.45)" style-hover="color:#ff6b6b">Delete</span>
+</div>
+</div>
+</sc-for>
+</div>
+</div>
+</sc-if>
+</div>
+</main>
+</div>
+</sc-if>
+
+<sc-if value="{{ showSwitcher }}" hint-placeholder-val="{{ true }}">
+<div style="position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:200;display:flex;gap:4px;padding:5px;background:rgba(18,18,18,.92);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.12);border-radius:999px;box-shadow:0 10px 30px rgba(0,0,0,.5)">
+<sc-for list="{{ screens }}" as="s" hint-placeholder-count="3">
+<span onClick="{{ s.onClick }}" style="cursor:pointer;padding:8px 15px;border-radius:999px;font-family:ui-monospace,Menlo,monospace;font-size:10px;letter-spacing:.16em;text-transform:uppercase;background:{{ s.bg }};color:{{ s.fg }}">{{ s.label }}</span>
+</sc-for>
+</div>
+</sc-if>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1440}}">
+const STORE_KEY = 'insfire.site.v1';
+const DB_NAME = 'insfire-media';
+
+function defaults() {
+  return {
+    brand: { name: 'INSFIRE', accent: '#FF5A1F', ink: '#0a0a0a', paper: '#f3f1ed' },
+    type: { headingFont: 'Poppins', bodyFont: 'Poppins', headingScale: 1, letterSpacing: -32, bodySize: 16 },
+    layout: { container: 1560, sectionSpacing: 1, radius: 0, showNumbers: true },
+    nav: { sticky: true, adaptive: true, items: [
+      { label: 'Work', href: '#work' }, { label: 'Services', href: '#services' },
+      { label: 'About', href: '#about' }, { label: 'Contact', href: '#contact' }
+    ], ctaLabel: 'Start a project', ctaHref: 'https://wa.me/60123164569' },
+    anim: { mode: 'cinematic', distance: 28, duration: 950 },
+    hero: {
+      eyebrow: 'Creative storytelling studio · Kota Kinabalu',
+      line1: 'IGNITE', line2: 'WHAT MATTERS',
+      sub: 'We turn ideas, people and purpose into stories people remember.',
+      cat1: 'Corporate Storytelling', cat2: 'Film · Photography · Creative',
+      cta1: 'Start a project', cta1href: 'https://wa.me/60123164569',
+      cta2: 'View our work', cta2href: '#work',
+      mediaId: '', overlay: 55
+    },
+    problem: {
+      h1: 'YOUR BUSINESS HAS A STORY.', h2: 'BUT IS ANYONE LISTENING?',
+      intro: 'Great organisations often struggle to communicate what makes them different.',
+      b1: 'Your vision becomes a presentation.', b2: 'Your achievements become a report.', b3: 'Your people become statistics.',
+      outro: 'We believe there\u2019s a better way.',
+      k1: 'MAKE PEOPLE SEE IT.', k2: 'FEEL IT.', k3: 'REMEMBER IT.'
+    },
+    servicesTitle: 'HOW INSFIRE HELPS.',
+    servicesIntro: 'Three ways of working. One purpose \u2014 making what matters impossible to ignore.',
+    services: [
+      { title: 'STORY', items: 'Corporate Films\nDocumentaries\nBrand Stories\nLeadership Stories\nCampaign Films' },
+      { title: 'VISUAL', items: 'Corporate Photography\nBrand Photography\nCorporate Portraits\nEvent Photography\nCampaign Content' },
+      { title: 'EXPERIENCE', items: 'Digital Experiences\nInteractive Storytelling\nAI-powered Creative Solutions\nWeb Experiences' }
+    ],
+    workTitle: 'STORIES WE\u2019VE TOLD',
+    projects: [
+      { title: 'The People Who Keep The Lights On', client: 'Sabah Energy Group', category: 'Corporate Film', year: '2026', location: 'Kota Kinabalu', mediaId: '', featured: true, visible: true,
+        challenge: 'A 1,400-person utility was seen as infrastructure, not people.', idea: 'Follow one night shift, end to end.', execution: 'Four nights on site. One 6-minute film, three social cuts, 60 stills.', result: 'Opened the AGM and the year\u2019s recruitment campaign.' },
+      { title: 'Faces of Frontline Care', client: 'Borneo Health', category: 'Photography', year: '2026', location: 'Kota Kinabalu', mediaId: '', featured: false, visible: true, challenge: '', idea: '', execution: '', result: '' },
+      { title: 'A City That Remembers The Sea', client: 'KK Waterfront', category: 'Brand Story', year: '2025', location: 'Kota Kinabalu', mediaId: '', featured: false, visible: true, challenge: '', idea: '', execution: '', result: '' },
+      { title: 'Twelve Years, One Classroom', client: 'Yayasan Sabah', category: 'Documentary', year: '2025', location: 'Sandakan', mediaId: '', featured: false, visible: true, challenge: '', idea: '', execution: '', result: '' }
+    ],
+    about: { l1: 'WE BELIEVE', l2: 'EVERY STORY', l3: 'HAS A', l4: 'SPARK.',
+      serif: 'Insfire began with a simple belief: visual storytelling can move people to care, act and remember.',
+      body: 'Today we work with organisations to turn ideas, people and purpose into meaningful visual experiences \u2014 starting with the message, not the camera.',
+      stats: [ { value: '9', suffix: 'y', label: 'Telling stories' }, { value: '120', suffix: '+', label: 'Films delivered' }, { value: '5', suffix: '', label: 'People in the studio' } ] },
+    teamTitle: 'BEHIND THE FIRE.',
+    teamIntro: 'The people who would rather get the message right than get the shot fast.',
+    team: [ { name: 'Aiman R.', role: 'Founder / Director', mediaId: '' }, { name: 'Nadia L.', role: 'Story Strategist', mediaId: '' }, { name: 'Jeff T.', role: 'DOP', mediaId: '' } ],
+    whyusTitle: 'WHY INSFIRE.',
+    pillars: [
+      { title: 'STORY FIRST', body: 'We don\u2019t begin with cameras. We begin with the message.' },
+      { title: 'STRATEGY + CRAFT', body: 'Creative ideas are only valuable when they solve a communication problem.' },
+      { title: 'HUMAN', body: 'Technology changes. People still connect with people.' },
+      { title: 'BUILT FOR IMPACT', body: 'Beautiful isn\u2019t enough. The work needs to matter.' }
+    ],
+    insightsTitle: 'INSIGHTS.',
+    insights: [
+      { category: 'Strategy', title: 'Why most corporate videos fail before the first shot', date: 'Aug 2026', href: '#insights' },
+      { category: 'Future', title: 'AI can generate footage. It still can\u2019t find the truth.', date: 'Jul 2026', href: '#insights' }
+    ],
+    sections: [
+      { key: 'why', label: 'Why it matters', on: true },
+      { key: 'services', label: 'How Insfire helps', on: true },
+      { key: 'work', label: 'Stories we\u2019ve told', on: true },
+      { key: 'about', label: 'About Insfire', on: true },
+      { key: 'team', label: 'Behind the fire', on: false },
+      { key: 'whyus', label: 'Why Insfire', on: true },
+      { key: 'insights', label: 'Insights', on: false }
+    ],
+    cta: { l1: 'HAVE SOMETHING', l2: 'WORTH', l3: 'IGNITING?', sub: 'Tell us what you\u2019re trying to communicate.',
+      label: 'Start a conversation', href: 'https://wa.me/60123164569', location: 'Kota Kinabalu · Sabah · Malaysia' },
+    footer: { tagline: 'Ignite What Matters.', email: 'theinsfire@gmail.com', location: 'Kota Kinabalu · Sabah · Malaysia',
+      copyright: '© Insfire Studio', note: 'Ignite what matters',
+      nav: [ { label: 'Work', href: '#work' }, { label: 'Services', href: '#services' }, { label: 'About', href: '#about' }, { label: 'Contact', href: '#contact' } ],
+      socials: [ { label: 'Instagram', url: 'https://www.instagram.com/insfirestudio/' }, { label: 'Facebook', url: 'https://www.facebook.com/share/175BA15PGt/' } ] },
+    seo: { title: 'Insfire Studio — Ignite What Matters', description: 'Insfire Studio is a creative storytelling partner in Kota Kinabalu, helping organisations communicate vision, people and purpose through film, photography and digital experiences.', ogMediaId: '', canonical: 'https://insfire.org/', robots: 'index, follow' }
+  };
+}
+
+const FONTS = ['Poppins', 'Space Grotesk', 'DM Sans', 'Archivo', 'Instrument Serif', 'Playfair Display', 'Georgia', 'system-ui'];
+
+class Component extends DCLogic {
+  state = { screen: 'home', tab: 'Projects', store: defaults(), media: [], caseIndex: 0, dragging: false, saved: 'Loaded' };
+
+  // ---------- persistence ----------
+  componentDidMount() {
+    try {
+      const raw = localStorage.getItem(STORE_KEY);
+      if (raw) this.setState({ store: this.merge(defaults(), JSON.parse(raw)), saved: 'Loaded saved content' });
+    } catch (e) { /* ignore corrupt store */ }
+    this.loadMedia();
+    this.applyTheme();
+    this.applySeo();
+    this.observe();
+  }
+  componentDidUpdate(prev) {
+    this.applyTheme();
+    this.applySeo();
+    if (prev && prev.screen !== this.state.screen) window.scrollTo(0, 0);
+    this.observe();
+  }
+  merge(base, over) {
+    if (Array.isArray(base)) return Array.isArray(over) ? over : base;
+    if (base && typeof base === 'object') {
+      const out = Object.assign({}, base);
+      Object.keys(over || {}).forEach(k => { out[k] = (k in base) ? this.merge(base[k], over[k]) : over[k]; });
+      return out;
+    }
+    return over === undefined ? base : over;
+  }
+  save(store) {
+    this.setState({ store, saved: 'Saved just now' });
+    try { localStorage.setItem(STORE_KEY, JSON.stringify(store)); } catch (e) { this.setState({ saved: 'Save failed — storage full' }); }
+  }
+  set(path, value) {
+    const store = JSON.parse(JSON.stringify(this.state.store));
+    const parts = path.split('.');
+    let node = store;
+    for (let i = 0; i < parts.length - 1; i++) node = node[parts[i]];
+    node[parts[parts.length - 1]] = value;
+    this.save(store);
+  }
+  get(path) {
+    return path.split('.').reduce((o, k) => (o == null ? o : o[k]), this.state.store);
+  }
+
+  // ---------- media (IndexedDB) ----------
+  db() {
+    if (this._dbp) return this._dbp;
+    this._dbp = new Promise((res, rej) => {
+      const r = indexedDB.open(DB_NAME, 1);
+      r.onupgradeneeded = () => { if (!r.result.objectStoreNames.contains('files')) r.result.createObjectStore('files', { keyPath: 'id' }); };
+      r.onsuccess = () => res(r.result);
+      r.onerror = () => rej(r.error);
+    });
+    return this._dbp;
+  }
+  async loadMedia() {
+    try {
+      const db = await this.db();
+      const items = await new Promise((res, rej) => {
+        const tx = db.transaction('files', 'readonly').objectStore('files').getAll();
+        tx.onsuccess = () => res(tx.result || []); tx.onerror = () => rej(tx.error);
+      });
+      const media = items.map(it => ({ id: it.id, name: it.name, type: it.type, size: it.size, alt: it.alt || '', url: URL.createObjectURL(it.blob) }));
+      this.setState({ media });
+    } catch (e) { /* IndexedDB unavailable */ }
+  }
+  // assignTo: a store path to fill with the first upload. When omitted, new
+  // uploads flow into whichever website slots are still empty, in order.
+  async addFiles(fileList, assignTo) {
+    const files = Array.from(fileList || []);
+    if (!files.length) return;
+    const db = await this.db();
+    const ids = [];
+    for (const f of files) {
+      const id = 'm' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+      ids.push(id);
+      const rec = { id, name: f.name, type: f.type, size: f.size, alt: '', blob: f };
+      await new Promise((res, rej) => { const r = db.transaction('files', 'readwrite').objectStore('files').put(rec); r.onsuccess = res; r.onerror = () => rej(r.error); });
+    }
+    let note = files.length + ' file(s) uploaded';
+    if (assignTo) {
+      this.set(assignTo, ids[0]);
+      note = 'Uploaded and placed on the website';
+    } else {
+      const empty = this.slots().filter(s => !this.get(s.path));
+      const n = Math.min(empty.length, ids.length);
+      if (n) {
+        const store = JSON.parse(JSON.stringify(this.state.store));
+        for (let i = 0; i < n; i++) {
+          const parts = empty[i].path.split('.');
+          let node = store;
+          for (let j = 0; j < parts.length - 1; j++) node = node[parts[j]];
+          node[parts[parts.length - 1]] = ids[i];
+        }
+        this.save(store);
+        note = files.length + ' uploaded — ' + n + ' placed on the website';
+      }
+    }
+    this.setState({ saved: note });
+    this.loadMedia();
+  }
+
+  // Every media position the live website can render, in page order.
+  slots() {
+    const S = this.state.store;
+    const list = [{ path: 'hero.mediaId', label: 'Hero background', hint: 'Image or video · 16:9', ratio: '16/9', where: 'Hero' }];
+    S.projects.forEach((p, i) => {
+      list.push({ path: 'projects.' + i + '.mediaId', label: p.title || 'Project ' + (i + 1), hint: (p.visible === false ? 'hidden · ' : '') + (p.category || 'project') + ' thumbnail', ratio: '16/10', where: 'Stories we’ve told' });
+    });
+    S.team.forEach((t, i) => {
+      list.push({ path: 'team.' + i + '.mediaId', label: t.name || 'Team member ' + (i + 1), hint: 'Portrait · 3:4', ratio: '3/4', where: 'Behind the fire' });
+    });
+    list.push({ path: 'seo.ogMediaId', label: 'Social share image', hint: 'Link previews · 1200×630', ratio: '16/9', where: 'SEO' });
+    return list;
+  }
+  async removeMedia(id) {
+    const db = await this.db();
+    await new Promise((res) => { const r = db.transaction('files', 'readwrite').objectStore('files').delete(id); r.onsuccess = res; r.onerror = res; });
+    const hit = this.state.media.find(m => m.id === id);
+    if (hit) URL.revokeObjectURL(hit.url);
+    this.setState({ media: this.state.media.filter(m => m.id !== id) });
+  }
+  async setMediaAlt(id, alt) {
+    const db = await this.db();
+    const rec = await new Promise((res) => { const r = db.transaction('files', 'readonly').objectStore('files').get(id); r.onsuccess = () => res(r.result); r.onerror = () => res(null); });
+    if (!rec) return;
+    rec.alt = alt;
+    await new Promise((res) => { const r = db.transaction('files', 'readwrite').objectStore('files').put(rec); r.onsuccess = res; r.onerror = res; });
+    this.setState({ media: this.state.media.map(m => m.id === id ? Object.assign({}, m, { alt }) : m) });
+  }
+  mediaById(id) { return this.state.media.find(m => m.id === id) || null; }
+
+  // Media elements are built here (never as src="{{ hole }}" in markup, which
+  // would fire a failed request for the literal placeholder text mid-stream).
+  mediaEl(m, opts) {
+    if (!m) return null;
+    const o = opts || {};
+    const style = Object.assign({ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }, o.style || {});
+    if (/^video\//.test(m.type || '')) {
+      return React.createElement('video', { key: m.id, src: m.url, autoPlay: true, muted: true, loop: true, playsInline: true, style: style });
+    }
+    return React.createElement('img', { key: m.id, src: m.url, alt: m.alt || o.alt || '', loading: o.eager ? 'eager' : 'lazy', style: style });
+  }
+
+  listRowFlags(r, canMove, canRemove) { r.canMove = canMove; r.canRemove = canRemove; return r; }
+
+  // ---------- theme + seo ----------
+  applyTheme() {
+    const s = this.state.store, b = document.body.style;
+    b.setProperty('--accent', s.brand.accent);
+    b.setProperty('--ink', s.brand.ink);
+    b.setProperty('--paper', s.brand.paper);
+    b.setProperty('--hf', '"' + s.type.headingFont + '", sans-serif');
+    b.setProperty('--bf', '"' + s.type.bodyFont + '", sans-serif');
+    b.setProperty('--hs', String(s.type.headingScale));
+    b.setProperty('--hls', (s.type.letterSpacing / 1000) + 'em');
+    b.setProperty('--bs', s.type.bodySize + 'px');
+    b.setProperty('--cw', s.layout.container + 'px');
+    b.setProperty('--ss', String(s.layout.sectionSpacing));
+    b.setProperty('--r', s.layout.radius + 'px');
+    document.body.style.fontFamily = '"' + s.type.bodyFont + '", system-ui, sans-serif';
+    document.body.style.fontSize = s.type.bodySize + 'px';
+  }
+  meta(sel, attr, key, content) {
+    let el = document.head.querySelector(sel);
+    if (!el) { el = document.createElement('meta'); el.setAttribute(attr, key); document.head.appendChild(el); }
+    el.setAttribute('content', content);
+  }
+  applySeo() {
+    const s = this.state.store.seo;
+    document.title = s.title;
+    this.meta('meta[name="description"]', 'name', 'description', s.description);
+    this.meta('meta[name="robots"]', 'name', 'robots', s.robots);
+    this.meta('meta[property="og:title"]', 'property', 'og:title', s.title);
+    this.meta('meta[property="og:description"]', 'property', 'og:description', s.description);
+    this.meta('meta[property="og:type"]', 'property', 'og:type', 'website');
+    const og = this.mediaById(s.ogMediaId);
+    if (og) this.meta('meta[property="og:image"]', 'property', 'og:image', og.url);
+    let link = document.head.querySelector('link[rel="canonical"]');
+    if (!link) { link = document.createElement('link'); link.rel = 'canonical'; document.head.appendChild(link); }
+    link.href = s.canonical;
+  }
+
+  // ---------- reveal animation ----------
+  observe() {
+    const a = this.state.store.anim;
+    const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const nodes = Array.from(document.querySelectorAll('[data-reveal]'));
+    const show = (el) => { el.style.opacity = '1'; el.style.transform = 'none'; };
+    if (a.mode === 'off' || reduced) { nodes.forEach(show); return; }
+    const dist = a.mode === 'minimal' ? Math.min(12, a.distance) : a.distance;
+    if (this._io) this._io.disconnect();
+    this._io = new IntersectionObserver((entries) => {
+      entries.forEach(e => { if (e.isIntersecting) { show(e.target); this._io.unobserve(e.target); } });
+    }, { rootMargin: '0px 0px -8% 0px', threshold: 0.05 });
+    nodes.forEach(el => {
+      if (el.dataset.revealed) return;
+      el.dataset.revealed = '1';
+      el.style.opacity = '0';
+      el.style.transform = 'translateY(' + dist + 'px)';
+      el.style.transition = 'opacity ' + a.duration + 'ms cubic-bezier(.2,.75,.2,1), transform ' + (a.duration + 100) + 'ms cubic-bezier(.2,.75,.2,1)';
+      this._io.observe(el);
+    });
+    clearTimeout(this._fb);
+    this._fb = setTimeout(() => nodes.forEach(show), a.duration + 1800);
+    if (this._nav) {
+      const s = this.state.store.nav;
+      this._nav.style.position = s.sticky ? 'sticky' : 'relative';
+      if (this._navIo) this._navIo.disconnect();
+      if (s.adaptive) {
+        this._navIo = new IntersectionObserver((entries) => {
+          const top = entries.filter(e => e.isIntersecting).sort((x, y) => x.boundingClientRect.top - y.boundingClientRect.top)[0];
+          if (!top || !this._nav) return;
+          const light = top.target.dataset.nav === 'light';
+          this._nav.style.background = light ? 'rgba(243,241,237,.86)' : 'rgba(10,10,10,.72)';
+          this._nav.style.color = light ? '#0a0a0a' : '#f2f0ec';
+          this._nav.style.borderBottomColor = light ? 'rgba(10,10,10,.1)' : 'rgba(255,255,255,.08)';
+        }, { rootMargin: '-70px 0px -85% 0px', threshold: 0 });
+        Array.from(document.querySelectorAll('[data-nav]')).forEach(n => this._navIo.observe(n));
+      }
+    }
+    if (this._navCta) this._navCta.style.display = window.innerWidth > 880 ? 'inline-flex' : 'none';
+  }
+  componentWillUnmount() { if (this._io) this._io.disconnect(); if (this._navIo) this._navIo.disconnect(); clearTimeout(this._fb); }
+
+  // ---------- import / export ----------
+  exportConfig = () => {
+    const blob = new Blob([JSON.stringify(this.state.store, null, 2)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'insfire-content.json';
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+    this.setState({ saved: 'Exported insfire-content.json' });
+  };
+  importConfig = (e) => {
+    const f = e.target.files && e.target.files[0];
+    if (!f) return;
+    const r = new FileReader();
+    r.onload = () => { try { this.save(this.merge(defaults(), JSON.parse(r.result))); this.setState({ saved: 'Imported content' }); } catch (err) { this.setState({ saved: 'Import failed — invalid JSON' }); } };
+    r.readAsText(f);
+  };
+  resetConfig = () => { if (window.confirm('Reset all content and design settings to defaults? Uploaded media is kept.')) this.save(defaults()); };
+
+  // ---------- field helpers ----------
+  tog(on) { const a = this.state.store.brand.accent; return { tBg: on ? a : 'rgba(255,255,255,.16)', tJustify: on ? 'flex-end' : 'flex-start', tKnob: on ? '#0a0a0a' : 'rgba(242,240,236,.75)' }; }
+  f(kind, label, path, extra) {
+    const v = this.get(path);
+    const base = { label, hint: (extra && extra.hint) || '', value: v == null ? '' : v, isText: false, isArea: false, isColor: false, isRange: false, isSelect: false, isToggle: false, options: [], min: 0, max: 1, step: 1, display: '', tBg: '', tJustify: '', tKnob: '' };
+    const o = Object.assign(base, extra || {});
+    if (kind === 'text') { o.isText = true; o.onChange = (e) => this.set(path, e.target.value); }
+    if (kind === 'area') { o.isArea = true; o.onChange = (e) => this.set(path, e.target.value); }
+    if (kind === 'color') { o.isColor = true; o.onChange = (e) => this.set(path, e.target.value); }
+    if (kind === 'range') { o.isRange = true; o.onChange = (e) => this.set(path, parseFloat(e.target.value)); o.display = (extra && extra.fmt) ? extra.fmt(v) : String(v); }
+    if (kind === 'select') { o.isSelect = true; o.onChange = (e) => this.set(path, e.target.value); }
+    if (kind === 'toggle') { o.isToggle = true; Object.assign(o, this.tog(!!v)); o.onChange = () => this.set(path, !v); }
+    return o;
+  }
+  opts(arr) { return arr.map(x => (typeof x === 'string' ? { value: x, label: x } : x)); }
+  mediaOptions() { return [{ value: '', label: '— none (placeholder) —' }].concat(this.state.media.map(m => ({ value: m.id, label: m.name }))); }
+  listRow(path, i, heading, fields) {
+    const arr = this.get(path);
+    const move = (d) => () => {
+      const a = arr.slice(); const j = i + d;
+      if (j < 0 || j >= a.length) return;
+      const t = a[i]; a[i] = a[j]; a[j] = t; this.set(path, a);
+    };
+    return { heading, fields, canMove: true, canRemove: true,
+      up: move(-1), down: move(1),
+      remove: () => { const a = arr.slice(); a.splice(i, 1); this.set(path, a); } };
+  }
+
+  tabs() {
+    return {
+      Content: ['Projects', 'Services', 'Team', 'Insights', 'Media'],
+      Design: ['Colours', 'Typography', 'Layout', 'Navigation', 'Animations'],
+      Site: ['Hero', 'Sections', 'Footer', 'SEO']
+    };
+  }
+
+  buildTab() {
+    const t = this.state.tab, S = this.state.store;
+    const F = (k, l, p, e) => this.f(k, l, p, e);
+    const media = { isSelect: true, options: this.mediaOptions() };
+    const out = { fields: [], lists: [], help: '' };
+
+    if (t === 'Colours') {
+      out.help = 'Brand colours apply instantly across the whole site. Keep orange as an accent — buttons, hovers, small marks.';
+      out.fields = [ F('color', 'Insfire orange (accent)', 'brand.accent'), F('color', 'Ink (dark sections)', 'brand.ink'), F('color', 'Paper (light sections)', 'brand.paper'), F('text', 'Logo wordmark', 'brand.name') ];
+    }
+    if (t === 'Typography') {
+      out.help = 'Heading scale multiplies every heading at once, so the responsive type ramp stays intact.';
+      out.fields = [
+        this.f('select', 'Heading font', 'type.headingFont', { options: this.opts(FONTS) }),
+        this.f('select', 'Body font', 'type.bodyFont', { options: this.opts(FONTS) }),
+        this.f('range', 'Heading scale', 'type.headingScale', { min: 0.7, max: 1.3, step: 0.01, fmt: v => (v * 100).toFixed(0) + '%' }),
+        this.f('range', 'Heading letter spacing', 'type.letterSpacing', { min: -60, max: 20, step: 2, fmt: v => (v / 1000).toFixed(3) + 'em' }),
+        this.f('range', 'Body text size', 'type.bodySize', { min: 14, max: 20, step: 0.5, fmt: v => v + 'px' })
+      ];
+    }
+    if (t === 'Layout') {
+      out.help = 'Container width sets the maximum content measure; section spacing scales all vertical rhythm together.';
+      out.fields = [
+        this.f('range', 'Container width', 'layout.container', { min: 1100, max: 1900, step: 20, fmt: v => v + 'px' }),
+        this.f('range', 'Section spacing', 'layout.sectionSpacing', { min: 0.6, max: 1.6, step: 0.05, fmt: v => (v * 100).toFixed(0) + '%' }),
+        this.f('range', 'Corner radius', 'layout.radius', { min: 0, max: 28, step: 1, fmt: v => v + 'px' }),
+        F('toggle', 'Show section numbers', 'layout.showNumbers')
+      ];
+    }
+    if (t === 'Navigation') {
+      out.help = 'Menu items, order and the header CTA. Adaptive colour flips the header between light and dark as it passes over sections.';
+      out.fields = [ F('toggle', 'Sticky header', 'nav.sticky'), F('toggle', 'Adaptive header colour', 'nav.adaptive'), F('text', 'CTA label', 'nav.ctaLabel'), F('text', 'CTA link', 'nav.ctaHref', { hint: 'url or #anchor' }) ];
+      out.lists = [{ title: 'Menu items', addLabel: '+ Add item', onAdd: () => this.set('nav.items', S.nav.items.concat([{ label: 'New', href: '#top' }])),
+        rows: S.nav.items.map((it, i) => this.listRow('nav.items', i, it.label || 'Item', [ F('text', 'Label', 'nav.items.' + i + '.label'), F('text', 'Link', 'nav.items.' + i + '.href') ])) }];
+    }
+    if (t === 'Animations') {
+      out.help = 'Cinematic is the designed default. Minimal shortens travel; Off disables reveals entirely. Reduced-motion visitors always get Off.';
+      out.fields = [
+        this.f('select', 'Motion mode', 'anim.mode', { options: this.opts(['cinematic', 'minimal', 'off']) }),
+        this.f('range', 'Reveal travel', 'anim.distance', { min: 0, max: 60, step: 2, fmt: v => v + 'px' }),
+        this.f('range', 'Reveal duration', 'anim.duration', { min: 400, max: 1600, step: 50, fmt: v => v + 'ms' })
+      ];
+    }
+    if (t === 'Hero') {
+      out.help = 'The hero media accepts an uploaded image or video from the Media library. Overlay darkens it so the type stays readable.';
+      out.fields = [
+        F('text', 'Eyebrow line', 'hero.eyebrow'), F('text', 'Headline line 1', 'hero.line1'), F('text', 'Headline line 2', 'hero.line2'),
+        F('area', 'Supporting text', 'hero.sub'),
+        this.f('select', 'Hero media', 'hero.mediaId', media),
+        this.f('range', 'Overlay darkness', 'hero.overlay', { min: 0, max: 90, step: 5, fmt: v => v + '%' }),
+        F('text', 'Primary CTA label', 'hero.cta1'), F('text', 'Primary CTA link', 'hero.cta1href'),
+        F('text', 'Secondary CTA label', 'hero.cta2'), F('text', 'Secondary CTA link', 'hero.cta2href'),
+        F('text', 'Category line 1', 'hero.cat1'), F('text', 'Category line 2', 'hero.cat2')
+      ];
+    }
+    if (t === 'Sections') {
+      out.help = 'Drag order with the arrows, switch sections on or off, and edit the copy of each narrative block below.';
+      out.lists = [
+        { title: 'Section order & visibility', addLabel: '', onAdd: () => {},
+          rows: S.sections.map((sc, i) => {
+            const r = this.listRow('sections', i, String(i + 1).padStart(2, '0') + ' — ' + sc.label, [ F('text', 'Label', 'sections.' + i + '.label'), F('toggle', 'Visible on site', 'sections.' + i + '.on') ]);
+            r.canRemove = false;
+            return r;
+          }) },
+        { title: 'Why it matters — copy', addLabel: '', onAdd: () => {},
+          rows: [ { heading: 'Section copy', canMove: false, canRemove: false, up: () => {}, down: () => {}, remove: () => {},
+            fields: [ F('text', 'Headline', 'problem.h1'), F('text', 'Second line', 'problem.h2'), F('area', 'Intro', 'problem.intro'),
+              F('text', 'Bullet 1', 'problem.b1'), F('text', 'Bullet 2', 'problem.b2'), F('text', 'Bullet 3', 'problem.b3'),
+              F('area', 'Closing line', 'problem.outro'), F('text', 'Big line 1', 'problem.k1'), F('text', 'Big line 2', 'problem.k2'), F('text', 'Big line 3', 'problem.k3') ] } ] },
+        { title: 'About + Why Insfire — copy', addLabel: '+ Add pillar', onAdd: () => this.set('pillars', S.pillars.concat([{ title: 'NEW PILLAR', body: '' }])),
+          rows: [ { heading: 'About section', canMove: false, canRemove: false, up: () => {}, down: () => {}, remove: () => {},
+            fields: [ F('text', 'Line 1', 'about.l1'), F('text', 'Line 2', 'about.l2'), F('text', 'Line 3', 'about.l3'), F('text', 'Accent word', 'about.l4'),
+              F('area', 'Serif statement', 'about.serif'), F('area', 'Body copy', 'about.body'), F('text', 'Why Insfire title', 'whyusTitle') ] } ]
+            .concat(S.pillars.map((p, i) => this.listRow('pillars', i, p.title || 'Pillar', [ F('text', 'Title', 'pillars.' + i + '.title'), F('area', 'Body', 'pillars.' + i + '.body') ]))) },
+        { title: 'Studio numbers', addLabel: '+ Add stat', onAdd: () => this.set('about.stats', S.about.stats.concat([{ value: '0', suffix: '', label: 'New stat' }])),
+          rows: S.about.stats.map((st, i) => this.listRow('about.stats', i, st.value + st.suffix + ' ' + st.label, [ F('text', 'Value', 'about.stats.' + i + '.value'), F('text', 'Suffix', 'about.stats.' + i + '.suffix'), F('text', 'Label', 'about.stats.' + i + '.label') ])) },
+        { title: 'Closing CTA', addLabel: '', onAdd: () => {},
+          rows: [ { heading: 'CTA section', canMove: false, canRemove: false, up: () => {}, down: () => {}, remove: () => {},
+            fields: [ F('text', 'Line 1', 'cta.l1'), F('text', 'Line 2', 'cta.l2'), F('text', 'Accent word', 'cta.l3'), F('area', 'Supporting text', 'cta.sub'), F('text', 'Button label', 'cta.label'), F('text', 'Button link', 'cta.href'), F('text', 'Location line', 'cta.location') ] } ] }
+      ];
+    }
+    if (t === 'Footer') {
+      out.help = 'Footer wordmark, tagline, links and contact details.';
+      out.fields = [ F('text', 'Tagline', 'footer.tagline'), F('text', 'Email', 'footer.email'), F('text', 'Location', 'footer.location'), F('text', 'Copyright', 'footer.copyright'), F('text', 'Right-hand note', 'footer.note') ];
+      out.lists = [
+        { title: 'Footer menu', addLabel: '+ Add link', onAdd: () => this.set('footer.nav', S.footer.nav.concat([{ label: 'New', href: '#top' }])),
+          rows: S.footer.nav.map((n, i) => this.listRow('footer.nav', i, n.label || 'Link', [ F('text', 'Label', 'footer.nav.' + i + '.label'), F('text', 'Link', 'footer.nav.' + i + '.href') ])) },
+        { title: 'Social links', addLabel: '+ Add social', onAdd: () => this.set('footer.socials', S.footer.socials.concat([{ label: 'New', url: 'https://' }])),
+          rows: S.footer.socials.map((n, i) => this.listRow('footer.socials', i, n.label || 'Social', [ F('text', 'Label', 'footer.socials.' + i + '.label'), F('text', 'URL', 'footer.socials.' + i + '.url') ])) }
+      ];
+    }
+    if (t === 'SEO') {
+      out.help = 'These write straight into the page: title, meta description, robots, canonical URL and Open Graph tags for link previews.';
+      out.fields = [ F('text', 'Page title', 'seo.title', { hint: 'max ~60 chars' }), F('area', 'Meta description', 'seo.description', { hint: 'max ~155 chars' }),
+        F('text', 'Canonical URL', 'seo.canonical'), this.f('select', 'Robots', 'seo.robots', { options: this.opts(['index, follow', 'noindex, nofollow']) }),
+        this.f('select', 'Social share image', 'seo.ogMediaId', media) ];
+    }
+    if (t === 'Projects') {
+      out.help = 'Add, reorder, hide and feature projects. The first featured project takes the large slot; media comes from the Media library.';
+      out.lists = [{ title: 'Projects', addLabel: '+ New project',
+        onAdd: () => this.set('projects', [{ title: 'New project', client: '', category: '', year: String(new Date().getFullYear()), location: '', mediaId: '', featured: false, visible: true, challenge: '', idea: '', execution: '', result: '' }].concat(S.projects)),
+        rows: S.projects.map((p, i) => this.listRow('projects', i, p.title || 'Untitled', [
+          F('text', 'Title', 'projects.' + i + '.title'), F('text', 'Client', 'projects.' + i + '.client'),
+          F('text', 'Category', 'projects.' + i + '.category'), F('text', 'Year', 'projects.' + i + '.year'), F('text', 'Location', 'projects.' + i + '.location'),
+          this.f('select', 'Media', 'projects.' + i + '.mediaId', media),
+          F('toggle', 'Featured', 'projects.' + i + '.featured'), F('toggle', 'Visible', 'projects.' + i + '.visible'),
+          F('area', 'The challenge', 'projects.' + i + '.challenge'), F('area', 'The idea', 'projects.' + i + '.idea'),
+          F('area', 'The execution', 'projects.' + i + '.execution'), F('area', 'The result', 'projects.' + i + '.result')
+        ])) }];
+    }
+    if (t === 'Services') {
+      out.help = 'Three capability groups. One item per line in the list field.';
+      out.fields = [ F('text', 'Section title', 'servicesTitle'), F('area', 'Section intro', 'servicesIntro'), F('text', 'Work section title', 'workTitle') ];
+      out.lists = [{ title: 'Capability groups', addLabel: '+ Add group', onAdd: () => this.set('services', S.services.concat([{ title: 'NEW', items: '' }])),
+        rows: S.services.map((s, i) => this.listRow('services', i, s.title || 'Group', [ F('text', 'Title', 'services.' + i + '.title'), F('area', 'Items (one per line)', 'services.' + i + '.items') ])) }];
+    }
+    if (t === 'Team') {
+      out.help = 'Team members shown in the “Behind the fire” section. Switch that section on under Site → Sections.';
+      out.fields = [ F('text', 'Section title', 'teamTitle'), F('area', 'Section intro', 'teamIntro') ];
+      out.lists = [{ title: 'Team members', addLabel: '+ Add member', onAdd: () => this.set('team', S.team.concat([{ name: 'New member', role: '', mediaId: '' }])),
+        rows: S.team.map((m, i) => this.listRow('team', i, m.name || 'Member', [ F('text', 'Name', 'team.' + i + '.name'), F('text', 'Role', 'team.' + i + '.role'), this.f('select', 'Portrait', 'team.' + i + '.mediaId', media) ])) }];
+    }
+    if (t === 'Insights') {
+      out.help = 'Articles listed on the homepage. The Insights section is currently switched off under Site → Sections.';
+      out.fields = [ F('text', 'Section title', 'insightsTitle') ];
+      out.lists = [{ title: 'Articles', addLabel: '+ Add article', onAdd: () => this.set('insights', [{ category: 'Strategy', title: 'New article', date: '', href: '#insights' }].concat(S.insights)),
+        rows: S.insights.map((a, i) => this.listRow('insights', i, a.title || 'Article', [ F('text', 'Title', 'insights.' + i + '.title'), F('text', 'Category', 'insights.' + i + '.category'), F('text', 'Date', 'insights.' + i + '.date'), F('text', 'Link', 'insights.' + i + '.href') ])) }];
+    }
+    if (t === 'Media') out.help = 'Files are stored in this browser. Uploading here makes them selectable in Hero, Projects, Team and SEO. For long videos, host on Vimeo or Cloudflare Stream instead.';
+    return out;
+  }
+
+  renderVals() {
+    const S = this.state.store, st = this.state;
+    const acc = S.brand.accent;
+    const visible = S.sections.filter(s => s.on);
+    const sec = {};
+    S.sections.forEach((s, i) => {
+      sec[s.key] = { order: s.on ? (i + 2) : 99, display: s.on ? 'block' : 'none', label: s.label, num: String(visible.findIndex(v => v.key === s.key) + 1).padStart(2, '0') };
+    });
+    ['why', 'services', 'work', 'about', 'team', 'whyus', 'insights'].forEach(k => { if (!sec[k]) sec[k] = { order: 99, display: 'none', label: '', num: '' }; });
+
+    const heroMedia = this.mediaById(S.hero.mediaId);
+    const heroIsVideo = !!(heroMedia && /^video\//.test(heroMedia.type));
+    const ov = S.hero.overlay / 100;
+
+    const shown = S.projects.filter(p => p.visible !== false);
+    const ordered = shown.slice().sort((a, b) => (b.featured ? 1 : 0) - (a.featured ? 1 : 0));
+    const spans = [12, 7, 5, 12, 6, 6];
+    const ratios = ['16/7', '4/3', '1/1', '21/8', '4/3', '4/3'];
+
+    const tab = this.buildTab();
+    const groups = this.tabs();
+    const navGroups = Object.keys(groups).map(title => ({
+      title,
+      items: groups[title].map(label => ({
+        label,
+        bg: st.tab === label ? 'rgba(255,255,255,.09)' : 'transparent',
+        fg: st.tab === label ? '#f2f0ec' : 'rgba(242,240,236,.62)',
+        bar: st.tab === label ? acc : 'transparent',
+        onClick: () => this.setState({ tab: label })
+      }))
+    }));
+
+    const caseP = S.projects[st.caseIndex] || S.projects[0] || {};
+    const caseMedia = this.mediaById(caseP.mediaId);
+
+    return {
+      showSwitcher: typeof location === 'undefined' ? true : (/[?&]preview=1/.test(location.search) || !/(^|\.)insfire\.org$/.test(location.hostname)),
+      isHome: st.screen === 'home', isCase: st.screen === 'case', isCms: st.screen === 'cms',
+      screens: [ { label: 'Homepage', key: 'home' }, { label: 'Case study', key: 'case' }, { label: 'CMS editor', key: 'cms' } ].map(x => ({
+        label: x.label, bg: st.screen === x.key ? acc : 'transparent', fg: st.screen === x.key ? '#0a0a0a' : 'rgba(242,240,236,.7)',
+        onClick: () => this.setState({ screen: x.key })
+      })),
+      goHome: () => this.setState({ screen: 'home' }),
+      navRef: (el) => { this._nav = el; }, navCtaRef: (el) => { this._navCta = el; },
+      navPosition: S.nav.sticky ? 'sticky' : 'relative',
+      brandName: S.brand.name,
+      navItems: S.nav.items, navCta: { label: S.nav.ctaLabel, href: S.nav.ctaHref },
+      numbersDisplay: S.layout.showNumbers ? 'block' : 'none',
+      sec,
+      hero: Object.assign({}, S.hero, {
+        hasMedia: !!heroMedia, noMedia: !heroMedia, isVideo: heroIsVideo, isImage: !!heroMedia && !heroIsVideo,
+        mediaUrl: heroMedia ? heroMedia.url : '', mediaAlt: heroMedia ? (heroMedia.alt || 'Insfire hero') : '',
+        mediaEl: this.mediaEl(heroMedia, { eager: true, alt: 'Insfire hero', style: heroIsVideo ? {} : { animation: 'insSlowZoom 22s ease-in-out infinite alternate' } }),
+        o1: (0.35 + ov * 0.55).toFixed(2), o2: (ov * 0.75).toFixed(2)
+      }),
+      problem: S.problem,
+      servicesTitle: S.servicesTitle, servicesIntro: S.servicesIntro,
+      services: S.services.map((s, i) => ({ num: String(i + 1).padStart(2, '0'), title: s.title, items: String(s.items || '').split('\n').filter(Boolean).map(label => ({ label })) })),
+      workTitle: S.workTitle,
+      workCount: shown.length + ' selected project' + (shown.length === 1 ? '' : 's'),
+      workItems: ordered.slice(0, 6).map((p, i) => {
+        const m = this.mediaById(p.mediaId);
+        const idx = S.projects.indexOf(p);
+        return {
+          span: spans[i] || 6, ratio: ratios[i] || '4/3', align: i === 2 ? 'end' : 'start',
+          hasMedia: !!m, noMedia: !m, mediaUrl: m ? m.url : '', alt: m ? (m.alt || p.title) : '',
+          mediaEl: this.mediaEl(m, { alt: p.title }),
+          placeholder: (p.category || 'project') + ' · upload media in CMS',
+          featured: !!p.featured, title: p.title,
+          meta: [p.client, p.category].filter(Boolean).join(' · '),
+          metaColor: p.featured ? acc : 'rgba(242,240,236,.5)',
+          weight: i === 0 ? 600 : 500,
+          titleSize: i === 0 ? 'clamp(20px,2.6vw,38px)' : 'clamp(17px,1.8vw,26px)',
+          stamp: [p.year, p.location].filter(Boolean).join(' · '),
+          open: () => this.setState({ screen: 'case', caseIndex: idx < 0 ? 0 : idx })
+        };
+      }),
+      about: S.about, stats: S.about.stats,
+      teamTitle: S.teamTitle, teamIntro: S.teamIntro,
+      team: S.team.map(t => { const m = this.mediaById(t.mediaId); return { name: t.name, role: t.role, hasMedia: !!m, noMedia: !m, mediaUrl: m ? m.url : '', mediaEl: this.mediaEl(m, { alt: t.name }) }; }),
+      whyusTitle: S.whyusTitle,
+      pillars: S.pillars.map((p, i) => ({ title: p.title, body: p.body, border: i === 0 ? acc : 'rgba(255,255,255,.18)' })),
+      insightsTitle: S.insightsTitle, insights: S.insights,
+      cta: S.cta,
+      footer: Object.assign({}, S.footer, { mailto: 'mailto:' + S.footer.email }),
+      footerNav: S.footer.nav, socials: S.footer.socials,
+
+      caseItem: {
+        title: caseP.title || '', meta: [caseP.client, caseP.category, caseP.year].filter(Boolean).join(' · '),
+        hasMedia: !!caseMedia, mediaUrl: caseMedia ? caseMedia.url : '', mediaEl: this.mediaEl(caseMedia, { alt: caseP.title, eager: true }),
+        blocks: [ { label: 'The challenge', body: caseP.challenge }, { label: 'The idea', body: caseP.idea }, { label: 'The execution', body: caseP.execution }, { label: 'The result', body: caseP.result } ].filter(b => b.body),
+        details: [ { label: 'Client', value: caseP.client }, { label: 'Category', value: caseP.category }, { label: 'Year', value: caseP.year }, { label: 'Location', value: caseP.location } ].filter(d => d.value)
+      },
+
+      navGroups, cmsTitle: st.tab, savedNote: st.saved, tabHelp: tab.help,
+      fields: tab.fields, hasFields: tab.fields.length > 0,
+      lists: tab.lists.map(L => Object.assign({ hasAdd: !!L.addLabel }, L, {
+        rows: (L.rows || []).map(r => Object.assign({ canMove: true, canRemove: true }, r))
+      })),
+      hasLists: tab.lists.length > 0,
+      isMediaTab: st.tab === 'Media',
+      mediaList: st.media.map(m => ({
+        id: m.id, name: m.name, url: m.url, alt: m.alt,
+        isImage: /^image\//.test(m.type), isVideo: /^video\//.test(m.type),
+        thumbEl: this.mediaEl(m, { style: { position: 'static' } }),
+        kind: (m.type || '').split('/')[1] || 'file',
+        size: (m.size / 1048576).toFixed(m.size > 1048576 ? 1 : 2) + ' MB',
+        remove: () => this.removeMedia(m.id),
+        setAlt: (e) => this.setMediaAlt(m.id, e.target.value)
+      })),
+      mediaSummary: st.media.length + ' file' + (st.media.length === 1 ? '' : 's') + ' in the library',
+      slotSummary: (function (s) { const filled = s.filter(x => x.filled).length; return filled + ' of ' + s.length + ' filled'; })(this.slots().map(x => ({ filled: !!this.get(x.path) }))),
+      slotList: this.slots().map(sl => {
+        const m = this.mediaById(this.get(sl.path));
+        return {
+          label: sl.label, hint: sl.where + ' · ' + sl.hint, ratio: sl.ratio, value: this.get(sl.path) || '',
+          thumbEl: this.mediaEl(m, { style: { position: 'absolute', inset: 0 } }),
+          border: m ? 'rgba(255,255,255,.09)' : 'rgba(255,90,31,.4)',
+          scrim: m ? 'linear-gradient(180deg,rgba(10,10,10,.1),rgba(10,10,10,.62))' : 'transparent',
+          tag: m ? (m.name.length > 22 ? m.name.slice(0, 21) + '…' : m.name) : 'Empty',
+          tagColor: m ? 'rgba(242,240,236,.9)' : acc,
+          action: m ? 'Click to replace' : 'Click to upload',
+          options: this.mediaOptions(),
+          onPick: (e) => this.set(sl.path, e.target.value),
+          upload: (e) => this.addFiles(e.target.files, sl.path)
+        };
+      }),
+      onPickFiles: (e) => this.addFiles(e.target.files),
+      onDragOver: (e) => { e.preventDefault(); if (!st.dragging) this.setState({ dragging: true }); },
+      onDrop: (e) => { e.preventDefault(); this.setState({ dragging: false }); this.addFiles(e.dataTransfer.files); },
+      dropBorder: st.dragging ? acc : 'rgba(255,255,255,.22)',
+      dropBg: st.dragging ? 'rgba(255,90,31,.07)' : 'transparent',
+      exportConfig: this.exportConfig, importConfig: this.importConfig, resetConfig: this.resetConfig
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,2670 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics>
+<script type="module">
+/* ============================================================================
+   SUPABASE — PASTE YOUR REAL PROJECT VALUES ON THE NEXT TWO LINES
+   Supabase dashboard → Project Settings → API
+     SUPABASE_URL      = "Project URL"        (https://xxxx.supabase.co)
+     SUPABASE_ANON_KEY = "anon / public" key  (safe to expose; never the service role key)
+   ========================================================================== */
+const SUPABASE_URL = 'https://jlrlrhhxapheffvtqteg.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_4LUudYeyA-5-pcfkcjLW6g_NoOWsWgK';
+// The only address allowed to receive an admin magic link. Must match the email
+// your Supabase RLS policies check against.
+const ADMIN_EMAIL = 'theinsfire@gmail.com';
+/* ========================================================================== */
+
+window.__INSFIRE_ADMIN_EMAIL = ADMIN_EMAIL;
+
+// One client for the whole page. `persistSession` + `detectSessionInUrl` are
+// required for magic-link auth: the link returns to this page with tokens in the
+// URL fragment, which the client consumes and stores.
+window.__INSFIRE_SB = (async () => {
+  const configured = /^https:\/\/[a-z0-9-]+\.supabase\.co\/?$/i.test(SUPABASE_URL) && !/^(|your-.*-here)$/i.test(SUPABASE_ANON_KEY);
+  if (!configured) {
+    console.info('[Insfire] Supabase not configured yet — rendering bundled defaults, local CMS auth only.');
+    return null;
+  }
+  try {
+    const { createClient } = await import('https://esm.sh/@supabase/supabase-js@2');
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, flowType: 'pkce' }
+    });
+    window.__INSFIRE_SUPABASE = supabase;
+    return supabase;
+  } catch (e) {
+    console.warn('[Insfire] Supabase client unavailable.', e);
+    return null;
+  }
+})();
+
+// Public read of the `published` row. Fired at parse time so it overlaps startup.
+// Resolves to the site JSON or null — null means "use bundled defaults", so a
+// missing table, an empty row, or no network can never blank the page.
+window.__INSFIRE_PUBLISHED = (async () => {
+  const supabase = await window.__INSFIRE_SB;
+  if (!supabase) return null;
+  try {
+    const { data, error } = await supabase.from('content').select('json').eq('id', 'published').single();
+    if (error) { console.warn('[Insfire] Supabase read failed — using defaults.', error.message); return null; }
+    if (!data || !data.json) return null;
+    return typeof data.json === 'string' ? JSON.parse(data.json) : data.json;
+  } catch (e) {
+    console.warn('[Insfire] Supabase read threw — using defaults.', e);
+    return null;
+  }
+})();
+</script>
+<link rel="preconnect" href="https://esm.sh">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Instrument+Serif:ital@0;1&family=Space+Grotesk:wght@300;400;500;600;700&family=DM+Sans:wght@300;400;500;700&family=Archivo:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+html{scroll-behavior:smooth}
+section[id],div[id]{scroll-margin-top:84px}
+body{margin:0;background:#0a0a0a;color:#f2f0ec;font-family:Poppins,system-ui,sans-serif;-webkit-font-smoothing:antialiased;overflow-x:hidden;
+--accent:#FF5A1F;--ink:#0a0a0a;--paper:#f3f1ed;--hf:Poppins,sans-serif;--bf:Poppins,sans-serif;--hs:1;--hls:-0.032em;--bs:16px;--cw:1560px;--ss:1;--pad:clamp(16px,4vw,56px);--r:0px}
+a{color:var(--accent);text-decoration:none}
+a:hover{color:#fff}
+*{box-sizing:border-box}
+::selection{background:var(--accent);color:#0a0a0a}
+:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+input,textarea,select,button{font-family:Poppins,system-ui,sans-serif}
+@keyframes insSlowZoom{from{transform:scale(1)}to{transform:scale(1.08)}}
+@keyframes insSpark{0%,100%{opacity:.25}50%{opacity:.85}}
+@media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
+</style>
+</helmet>
+
+<template id="__bundler_thumbnail"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" fill="#0a0a0a"/><text x="50" y="62" font-family="Poppins,sans-serif" font-size="34" font-weight="700" fill="#FF5A1F" text-anchor="middle">IN</text></svg></template>
+
+<sc-if value="{{ booting }}" hint-placeholder-val="{{ false }}">
+<div aria-hidden="true" style="position:fixed;inset:0;z-index:200;background:#0a0a0a"></div>
+</sc-if>
+
+<sc-if value="{{ isHome }}" hint-placeholder-val="{{ true }}">
+<div style="display:flex;flex-direction:column">
+<header style="order:0;position:{{ navPosition }};top:0;left:0;right:0;z-index:60;display:flex;align-items:center;justify-content:space-between;gap:20px;padding:18px var(--pad);transition:background .5s,color .5s,border-color .5s;background:rgba(10,10,10,.72);backdrop-filter:blur(14px);border-bottom:1px solid rgba(255,255,255,.08)" ref="{{ navRef }}">
+<a href="#top" aria-label="{{ logo.alt }} — home" style="display:flex;align-items:center;font-weight:700;letter-spacing:.24em;font-size:15px;color:inherit;font-family:var(--hf);min-height:44px">
+<sc-if value="{{ logo.has }}" hint-placeholder-val="{{ false }}">{{ logo.el }}</sc-if>
+<sc-if value="{{ logo.none }}" hint-placeholder-val="{{ true }}">{{ brandName }}</sc-if>
+</a>
+<nav style="display:{{ navMenuDisplay }};gap:clamp(14px,2.4vw,34px);font-weight:500;font-size:11.5px;letter-spacing:.18em;text-transform:uppercase;color:inherit;opacity:.82">
+<sc-for list="{{ navItems }}" as="n" hint-placeholder-count="4">
+<a href="{{ n.href }}" onClick="{{ n.onClick }}" style="color:inherit" style-hover="color:var(--accent)">{{ n.label }}</a>
+</sc-for>
+</nav>
+<button type="button" onClick="{{ toggleMobileNav }}" aria-label="Open menu" aria-expanded="{{ mobileNavExpanded }}" style="display:{{ navBurgerDisplay }};flex-direction:column;align-items:flex-end;justify-content:center;gap:5px;width:44px;height:44px;padding:0;background:none;border:0;color:inherit;cursor:pointer;flex:none">
+<span style="display:block;width:26px;height:1.5px;background:currentColor"></span>
+<span style="display:block;width:18px;height:1.5px;background:currentColor"></span>
+<span style="display:block;width:26px;height:1.5px;background:currentColor"></span>
+</button>
+<a href="{{ navCta.href }}" style="display:none;align-items:center;gap:9px;font-weight:600;font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;color:inherit;border-bottom:1px solid var(--accent);padding-bottom:4px" style-hover="color:var(--accent)" ref="{{ navCtaRef }}">{{ navCta.label }} <span style="color:var(--accent)">&rarr;</span></a>
+</header>
+
+<sc-if value="{{ mobileNavOpen }}" hint-placeholder-val="{{ false }}">
+<div onClick="{{ closeMobileNav }}" role="dialog" aria-modal="true" aria-label="Site menu" style="position:fixed;inset:0;z-index:95;background:#0a0a0a;display:flex;flex-direction:column;padding:18px var(--pad) max(28px,env(safe-area-inset-bottom));overflow-y:auto;overscroll-behavior:contain">
+<div style="display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:44px;flex:none">
+<span style="font-family:ui-monospace,Menlo,monospace;font-size:10px;letter-spacing:.28em;text-transform:uppercase;color:rgba(242,240,236,.42)">Menu</span>
+<button type="button" onClick="{{ closeMobileNav }}" aria-label="Close menu" style="display:flex;align-items:center;justify-content:center;width:44px;height:44px;padding:0;background:none;border:0;color:#f2f0ec;font-size:28px;line-height:1;cursor:pointer;flex:none" style-hover="color:var(--accent)">&times;</button>
+</div>
+<nav onClick="{{ stopProp }}" style="display:flex;flex-direction:column;margin-top:clamp(22px,6vh,52px);flex:none">
+<sc-for list="{{ mobileNavItems }}" as="n" hint-placeholder-count="4">
+<a href="{{ n.href }}" onClick="{{ n.onClick }}" style="display:flex;align-items:center;min-height:60px;font-family:var(--hf);font-weight:500;font-size:clamp(21px,6.6vw,32px);line-height:1.1;letter-spacing:.05em;text-transform:uppercase;color:#f2f0ec;border-bottom:1px solid rgba(255,255,255,.09)" style-hover="color:var(--accent)">{{ n.label }}</a>
+</sc-for>
+</nav>
+<a href="{{ navCta.href }}" onClick="{{ closeMobileNav }}" style="margin-top:clamp(28px,7vh,56px);display:inline-flex;align-items:center;justify-content:center;gap:10px;min-height:56px;background:var(--accent);color:#0a0a0a;font-weight:600;font-size:12.5px;letter-spacing:.16em;text-transform:uppercase;padding:18px 24px;border-radius:var(--r);flex:none">{{ navCta.label }} <span>&rarr;</span></a>
+</div>
+</sc-if>
+
+<section id="top" data-nav="dark" style="order:1;position:relative;min-height:94vh;display:flex;flex-direction:column;justify-content:flex-end;padding:140px var(--pad) calc(34px * var(--ss));overflow:hidden;background:#0a0a0a">
+<div style="position:absolute;inset:0;overflow:hidden">
+<sc-if value="{{ hero.hasYt }}" hint-placeholder-val="{{ false }}">
+<div style="position:absolute;inset:0;overflow:hidden;pointer-events:none">{{ hero.ytEl }}</div>
+</sc-if>
+<sc-if value="{{ hero.hasMedia }}" hint-placeholder-val="{{ false }}">
+<div style="position:absolute;inset:0">{{ hero.mediaEl }}</div>
+</sc-if>
+<sc-if value="{{ hero.noMedia }}" hint-placeholder-val="{{ true }}">
+<div style="position:absolute;inset:0">
+<div style="position:absolute;inset:0;background:repeating-linear-gradient(122deg,#131313 0 14px,#1a1a1a 14px 28px);animation:insSlowZoom 22s ease-in-out infinite alternate"></div>
+<div style="position:absolute;inset:0;display:{{ cmsHintDisplay }};align-items:flex-end;justify-content:flex-start;padding:0 0 18px 22px"><span style="font-family:ui-monospace,Menlo,monospace;font-size:10px;letter-spacing:.24em;color:rgba(255,255,255,.34);text-transform:uppercase">add a hero YouTube link or image in CMS &rarr; Hero</span></div>
+</div>
+</sc-if>
+<div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(10,10,10,{{ hero.o1 }}) 0%,rgba(10,10,10,{{ hero.o2 }}) 42%,rgba(10,10,10,.94) 100%)"></div>
+<div style="position:absolute;left:-10%;top:35%;width:60%;height:40%;background:radial-gradient(closest-side,rgba(255,90,31,.22),transparent);filter:blur(10px);animation:insSpark 9s ease-in-out infinite"></div>
+</div>
+<div style="position:relative;max-width:var(--cw);width:100%;margin:0 auto">
+<div data-reveal style="font-family:ui-monospace,Menlo,monospace;font-size:11px;letter-spacing:.34em;text-transform:uppercase;color:var(--accent);margin-bottom:clamp(18px,3vw,34px)">{{ hero.eyebrow }}</div>
+<h1 data-reveal style="margin:0;font-family:var(--hf);font-weight:700;font-size:calc(clamp(44px,11vw,168px) * var(--hs));line-height:.88;letter-spacing:var(--hls);text-wrap:balance">{{ hero.line1 }}<br>{{ hero.line2 }}<span style="color:var(--accent)">.</span></h1>
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr));gap:clamp(22px,4vw,64px);align-items:end;margin-top:clamp(28px,5vw,64px)">
+<p data-reveal style="margin:0;font-size:calc(var(--bs) * 1.25);line-height:1.5;color:rgba(242,240,236,.82);max-width:30ch;font-weight:300">{{ hero.sub }}</p>
+<div data-reveal style="display:flex;flex-wrap:wrap;gap:14px;align-items:center">
+<a href="{{ hero.cta1href }}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:10px;background:var(--accent);color:#0a0a0a;font-weight:600;font-size:12.5px;letter-spacing:.14em;text-transform:uppercase;padding:17px 26px;min-height:48px;border-radius:var(--r);transition:transform .35s cubic-bezier(.2,.8,.2,1),background .3s" style-hover="background:#fff;transform:translateY(-2px)">{{ hero.cta1 }} <span>&rarr;</span></a>
+<a href="{{ hero.cta2href }}" style="display:inline-flex;align-items:center;gap:10px;color:#f2f0ec;font-weight:500;font-size:12.5px;letter-spacing:.14em;text-transform:uppercase;padding:17px 4px;min-height:48px;border-bottom:1px solid rgba(255,255,255,.35);transition:border-color .3s,color .3s" style-hover="color:var(--accent);border-color:var(--accent)">{{ hero.cta2 }} <span>&rarr;</span></a>
+</div>
+<div data-reveal style="font-family:ui-monospace,Menlo,monospace;font-size:10.5px;letter-spacing:.22em;text-transform:uppercase;color:rgba(242,240,236,.42);justify-self:end;text-align:right;line-height:2">{{ hero.cat1 }}<br>{{ hero.cat2 }}</div>
+</div>
+</div>
+</section>
+
+<section id="why" data-nav="dark" style="order:{{ sec.why.order }};display:{{ sec.why.display }};background:#0a0a0a;padding:calc(clamp(88px,13vw,190px) * var(--ss)) var(--pad);border-top:1px solid rgba(255,255,255,.07)">
+<div style="max-width:var(--cw);margin:0 auto">
+<div style="font-family:ui-monospace,Menlo,monospace;font-size:10.5px;letter-spacing:.3em;text-transform:uppercase;color:rgba(242,240,236,.38);margin-bottom:clamp(34px,6vw,74px);display:{{ numbersDisplay }}">{{ sec.why.num }} &mdash; {{ sec.why.label }}</div>
+<h2 data-reveal style="margin:0;font-family:var(--hf);font-weight:700;font-size:calc(clamp(30px,6.4vw,92px) * var(--hs));line-height:1.02;letter-spacing:var(--hls);max-width:22ch">{{ problem.h1 }}<br><span style="color:rgba(242,240,236,.34)">{{ problem.h2 }}</span></h2>
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:clamp(28px,5vw,90px);margin-top:clamp(48px,7vw,110px);align-items:start">
+<div data-reveal style="display:flex;flex-direction:column;gap:18px;max-width:46ch">
+<p style="margin:0;font-size:calc(var(--bs) * 1.1);line-height:1.65;color:rgba(242,240,236,.72);font-weight:300">{{ problem.intro }}</p>
+<div style="display:grid;gap:10px;font-size:calc(var(--bs) * 1.1);line-height:1.5;font-weight:300;border-left:1px solid var(--accent);padding-left:22px">
+<span>{{ problem.b1 }}</span><span>{{ problem.b2 }}</span><span>{{ problem.b3 }}</span>
+</div>
+<p style="margin:0;font-size:calc(var(--bs) * 1.1);line-height:1.65;color:rgba(242,240,236,.72);font-weight:300">{{ problem.outro }}</p>
+</div>
+<div data-reveal style="display:grid;gap:clamp(6px,1vw,14px);font-family:var(--hf);font-weight:700;font-size:calc(clamp(26px,4.6vw,64px) * var(--hs));line-height:1;letter-spacing:var(--hls);justify-items:start">
+<span>{{ problem.k1 }}</span><span style="color:rgba(242,240,236,.5)">{{ problem.k2 }}</span><span style="color:var(--accent)">{{ problem.k3 }}</span>
+</div>
+</div>
+</div>
+</section>
+
+<section id="services" data-nav="light" style="order:{{ sec.services.order }};display:{{ sec.services.display }};background:var(--paper);color:var(--ink);padding:calc(clamp(88px,13vw,190px) * var(--ss)) var(--pad)">
+<div style="max-width:var(--cw);margin:0 auto">
+<div style="display:flex;flex-wrap:wrap;gap:24px;justify-content:space-between;align-items:baseline;margin-bottom:clamp(40px,6vw,86px)">
+<h2 data-reveal style="margin:0;font-family:var(--hf);font-weight:700;font-size:calc(clamp(28px,5.4vw,76px) * var(--hs));line-height:1;letter-spacing:var(--hls);max-width:18ch">{{ servicesTitle }}</h2>
+<p data-reveal style="margin:0;font-size:var(--bs);line-height:1.6;color:rgba(10,10,10,.6);max-width:34ch;font-weight:300">{{ servicesIntro }}</p>
+</div>
+<div style="display:grid;border-top:1px solid rgba(10,10,10,.14)">
+<sc-for list="{{ services }}" as="s" hint-placeholder-count="3">
+<article data-reveal style="display:grid;grid-template-columns:minmax(0,auto) minmax(0,1.2fr) minmax(0,1fr);gap:clamp(16px,4vw,60px);align-items:start;padding:clamp(26px,4vw,52px) 0;border-bottom:1px solid rgba(10,10,10,.14);transition:background .4s" style-hover="background:rgba(10,10,10,.03)">
+<span style="font-weight:600;font-size:clamp(13px,1.2vw,15px);letter-spacing:.1em;color:var(--accent);font-family:ui-monospace,Menlo,monospace">{{ s.num }}</span>
+<h3 style="margin:0;font-family:var(--hf);font-weight:700;font-size:calc(clamp(30px,5vw,68px) * var(--hs));line-height:.95;letter-spacing:var(--hls)">{{ s.title }}</h3>
+<div style="display:grid;gap:8px;font-size:calc(var(--bs) * .92);line-height:1.55;color:rgba(10,10,10,.66)">
+<sc-for list="{{ s.items }}" as="i" hint-placeholder-count="4"><span>{{ i.label }}</span></sc-for>
+</div>
+</article>
+</sc-for>
+</div>
+</div>
+</section>
+
+<section id="work" data-nav="dark" style="order:{{ sec.work.order }};display:{{ sec.work.display }};background:#0a0a0a;padding:calc(clamp(88px,13vw,190px) * var(--ss)) var(--pad)">
+<div style="max-width:var(--cw);margin:0 auto">
+<div style="display:flex;flex-wrap:wrap;gap:20px;justify-content:space-between;align-items:baseline;margin-bottom:clamp(36px,5vw,72px)">
+<h2 data-reveal style="margin:0;font-family:var(--hf);font-weight:700;font-size:calc(clamp(28px,5.4vw,76px) * var(--hs));line-height:1;letter-spacing:var(--hls)">{{ workTitle }}<span style="color:var(--accent)">.</span></h2>
+<span style="font-family:ui-monospace,Menlo,monospace;font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:rgba(242,240,236,.55)">{{ workCount }}</span>
+</div>
+<div style="display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:clamp(14px,2.2vw,34px)">
+<sc-for list="{{ workItems }}" as="p" hint-placeholder-count="4">
+<a data-reveal style="grid-column:span {{ p.span }};display:block;color:inherit;align-self:{{ p.align }}">
+<div style="position:relative;overflow:hidden;border-radius:var(--r);aspect-ratio:{{ p.ratio }};background:repeating-linear-gradient(118deg,#141414 0 13px,#1c1c1c 13px 26px)">
+<sc-if value="{{ p.hasMedia }}" hint-placeholder-val="{{ false }}">{{ p.mediaEl }}</sc-if>
+<sc-if value="{{ p.noMedia }}" hint-placeholder-val="{{ true }}">
+<span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:14px;font-family:ui-monospace,Menlo,monospace;font-size:10.5px;letter-spacing:.26em;color:rgba(255,255,255,.26);text-transform:uppercase">{{ p.placeholder }}</span>
+</sc-if>
+<sc-if value="{{ p.featured }}" hint-placeholder-val="{{ false }}">
+<span style="position:absolute;left:18px;top:18px;background:var(--accent);color:#0a0a0a;font-family:ui-monospace,Menlo,monospace;font-size:10px;letter-spacing:.18em;padding:6px 10px;text-transform:uppercase">Featured</span>
+</sc-if>
+</div>
+<div style="display:flex;flex-wrap:wrap;gap:14px;justify-content:space-between;align-items:baseline;padding-top:15px">
+<div>
+<div style="font-family:ui-monospace,Menlo,monospace;font-size:10.5px;letter-spacing:.24em;text-transform:uppercase;color:{{ p.metaColor }}">{{ p.meta }}</div>
+<h3 style="margin:8px 0 0;font-family:var(--hf);font-weight:{{ p.weight }};font-size:calc({{ p.titleSize }} * var(--hs));line-height:1.12;letter-spacing:var(--hls)">{{ p.title }}</h3>
+</div>
+<span style="font-family:ui-monospace,Menlo,monospace;font-size:11px;color:rgba(242,240,236,.45);letter-spacing:.14em">{{ p.stamp }}</span>
+</div>
+</a>
+</sc-for>
+</div>
+</div>
+</section>
+
+<section id="about" data-nav="light" style="order:{{ sec.about.order }};display:{{ sec.about.display }};background:var(--paper);color:var(--ink);padding:calc(clamp(88px,13vw,190px) * var(--ss)) var(--pad)">
+<div style="max-width:var(--cw);margin:0 auto;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));gap:clamp(32px,6vw,96px);align-items:start">
+<div data-reveal>
+<h2 style="margin:0;font-family:var(--hf);font-weight:700;font-size:calc(clamp(30px,5.6vw,80px) * var(--hs));line-height:.98;letter-spacing:var(--hls)">{{ about.l1 }}<br>{{ about.l2 }}<br>{{ about.l3 }} <span style="color:var(--accent)">{{ about.l4 }}</span></h2>
+<p style="margin:clamp(24px,3vw,40px) 0 0;font-family:'Instrument Serif',Georgia,serif;font-size:calc(var(--bs) * 1.6);line-height:1.35;color:rgba(10,10,10,.78);max-width:32ch">{{ about.serif }}</p>
+</div>
+<div data-reveal style="display:grid;gap:clamp(22px,3vw,38px)">
+<p style="margin:0;font-size:calc(var(--bs) * 1.1);line-height:1.65;color:rgba(10,10,10,.68);font-weight:300;max-width:44ch">{{ about.body }}</p>
+<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:clamp(10px,1.6vw,22px);border-top:1px solid rgba(10,10,10,.16);padding-top:26px">
+<sc-for list="{{ stats }}" as="st" hint-placeholder-count="3">
+<div><div style="font-family:var(--hf);font-weight:700;font-size:calc(clamp(22px,2.6vw,40px) * var(--hs));letter-spacing:var(--hls)">{{ st.value }}<span style="color:var(--accent)">{{ st.suffix }}</span></div><div style="font-family:ui-monospace,Menlo,monospace;font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:rgba(10,10,10,.5);margin-top:6px">{{ st.label }}</div></div>
+</sc-for>
+</div>
+</div>
+</div>
+</section>
+
+<section id="team" data-nav="light" style="order:{{ sec.team.order }};display:{{ sec.team.display }};background:var(--paper);color:var(--ink);padding:0 var(--pad) calc(clamp(88px,13vw,170px) * var(--ss))">
+<div style="max-width:var(--cw);margin:0 auto">
+<div style="display:flex;flex-wrap:wrap;gap:18px;justify-content:space-between;align-items:baseline;border-top:1px solid rgba(10,10,10,.16);padding-top:clamp(30px,4vw,56px);margin-bottom:clamp(24px,3vw,44px)">
+<h2 data-reveal style="margin:0;font-family:var(--hf);font-weight:700;font-size:calc(clamp(26px,4.4vw,60px) * var(--hs));letter-spacing:var(--hls);line-height:1">{{ teamTitle }}</h2>
+<p style="margin:0;font-size:calc(var(--bs) * .9);color:rgba(10,10,10,.58);max-width:30ch;font-weight:300">{{ teamIntro }}</p>
+</div>
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,190px),1fr));gap:clamp(12px,2vw,26px)">
+<sc-for list="{{ team }}" as="t" hint-placeholder-count="4">
+<div data-reveal>
+<div style="position:relative;aspect-ratio:3/4;border-radius:var(--r);overflow:hidden;background:repeating-linear-gradient(118deg,#e3e0da 0 13px,#d9d6cf 13px 26px)">
+<sc-if value="{{ t.hasMedia }}" hint-placeholder-val="{{ false }}">{{ t.mediaEl }}</sc-if>
+<sc-if value="{{ t.noMedia }}" hint-placeholder-val="{{ true }}"><span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:ui-monospace,Menlo,monospace;font-size:10px;letter-spacing:.2em;color:rgba(10,10,10,.4);text-transform:uppercase">portrait 3:4</span></sc-if>
+</div>
+<div style="padding-top:12px;font-weight:500;font-size:calc(var(--bs) * .94)">{{ t.name }}</div>
+<div style="font-family:ui-monospace,Menlo,monospace;font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:rgba(10,10,10,.5);margin-top:4px">{{ t.role }}</div>
+</div>
+</sc-for>
+</div>
+</div>
+</section>
+
+<section id="whyus" data-nav="dark" style="order:{{ sec.whyus.order }};display:{{ sec.whyus.display }};background:#0a0a0a;padding:calc(clamp(88px,13vw,190px) * var(--ss)) var(--pad)">
+<div style="max-width:var(--cw);margin:0 auto">
+<h2 data-reveal style="margin:0 0 clamp(38px,6vw,84px);font-family:var(--hf);font-weight:700;font-size:calc(clamp(26px,4.4vw,60px) * var(--hs));letter-spacing:var(--hls);line-height:1">{{ whyusTitle }}</h2>
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:clamp(24px,3.4vw,54px)">
+<sc-for list="{{ pillars }}" as="p" hint-placeholder-count="4">
+<div data-reveal style="border-top:1px solid {{ p.border }};padding-top:20px">
+<h3 style="margin:0;font-family:var(--hf);font-weight:600;font-size:calc(clamp(18px,2vw,28px) * var(--hs));letter-spacing:var(--hls)">{{ p.title }}</h3>
+<p style="margin:14px 0 0;font-size:var(--bs);line-height:1.6;color:rgba(242,240,236,.62);font-weight:300">{{ p.body }}</p>
+</div>
+</sc-for>
+</div>
+</div>
+</section>
+
+<section id="insights" data-nav="dark" style="order:{{ sec.insights.order }};display:{{ sec.insights.display }};background:#0a0a0a;padding:0 var(--pad) calc(clamp(88px,13vw,180px) * var(--ss))">
+<div style="max-width:var(--cw);margin:0 auto">
+<div style="display:flex;flex-wrap:wrap;gap:18px;justify-content:space-between;align-items:baseline;border-top:1px solid rgba(255,255,255,.12);padding-top:clamp(30px,4vw,56px);margin-bottom:clamp(22px,3vw,40px)">
+<h2 data-reveal style="margin:0;font-family:var(--hf);font-weight:700;font-size:calc(clamp(26px,4.4vw,60px) * var(--hs));letter-spacing:var(--hls);line-height:1">{{ insightsTitle }}</h2>
+</div>
+<div style="display:grid">
+<sc-for list="{{ insights }}" as="a" hint-placeholder-count="3">
+<a href="{{ a.href }}" data-reveal style="display:grid;grid-template-columns:minmax(0,auto) minmax(0,3fr) minmax(0,1fr);gap:clamp(14px,3vw,44px);align-items:center;padding:clamp(20px,2.6vw,34px) 0;border-bottom:1px solid rgba(255,255,255,.12);color:inherit" style-hover="background:rgba(255,255,255,.03)">
+<span style="font-family:ui-monospace,Menlo,monospace;font-size:10.5px;letter-spacing:.2em;color:var(--accent);text-transform:uppercase">{{ a.category }}</span>
+<h3 style="margin:0;font-family:var(--hf);font-weight:400;font-size:calc(clamp(17px,2.2vw,32px) * var(--hs));line-height:1.18;letter-spacing:var(--hls)">{{ a.title }}</h3>
+<span style="font-family:ui-monospace,Menlo,monospace;font-size:10.5px;color:rgba(242,240,236,.42);letter-spacing:.14em;text-align:right">{{ a.date }}</span>
+</a>
+</sc-for>
+</div>
+</div>
+</section>
+
+<section id="contact" data-nav="dark" style="order:97;position:relative;overflow:hidden;background:#0a0a0a;padding:calc(clamp(96px,15vw,220px) * var(--ss)) var(--pad);border-top:1px solid rgba(255,255,255,.08)">
+<div style="position:absolute;left:4%;top:6%;width:46%;height:58%;background:radial-gradient(closest-side,rgba(255,90,31,.18),transparent);animation:insSpark 11s ease-in-out infinite"></div>
+<div style="position:relative;max-width:var(--cw);margin:0 auto;text-align:center;display:grid;justify-items:center;gap:clamp(22px,3vw,40px)">
+<h2 data-reveal style="margin:0;font-family:var(--hf);font-weight:700;font-size:calc(clamp(32px,8vw,124px) * var(--hs));line-height:.94;letter-spacing:var(--hls)">{{ cta.l1 }}<br>{{ cta.l2 }} <span style="color:var(--accent)">{{ cta.l3 }}</span></h2>
+<p data-reveal style="margin:0;font-size:calc(var(--bs) * 1.2);color:rgba(242,240,236,.7);font-weight:300">{{ cta.sub }}</p>
+<a data-reveal href="{{ cta.href }}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:12px;background:var(--accent);color:#0a0a0a;font-weight:600;font-size:13px;letter-spacing:.14em;text-transform:uppercase;padding:19px 30px;min-height:50px;border-radius:var(--r);transition:transform .35s cubic-bezier(.2,.8,.2,1),background .3s" style-hover="background:#fff;transform:translateY(-2px)">{{ cta.label }} <span>&rarr;</span></a>
+<div style="font-family:ui-monospace,Menlo,monospace;font-size:10.5px;letter-spacing:.26em;text-transform:uppercase;color:rgba(242,240,236,.45)">{{ cta.location }}</div>
+</div>
+</section>
+
+<footer data-nav="dark" style="order:98;background:#0a0a0a;border-top:1px solid rgba(255,255,255,.1);padding:calc(clamp(48px,7vw,90px) * var(--ss)) var(--pad) 34px">
+<div style="max-width:var(--cw);margin:0 auto;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,180px),1fr));gap:clamp(28px,4vw,60px);align-items:start">
+<div>
+<div style="font-family:var(--hf);font-weight:700;letter-spacing:.24em;font-size:15px">{{ brandName }}</div>
+<div style="font-family:'Instrument Serif',Georgia,serif;font-size:calc(var(--bs) * 1.2);color:rgba(242,240,236,.6);margin-top:10px">{{ footer.tagline }}</div>
+</div>
+<nav style="display:grid;gap:11px;font-size:12.5px;letter-spacing:.1em;text-transform:uppercase;font-weight:500">
+<sc-for list="{{ footerNav }}" as="n" hint-placeholder-count="4">
+<a href="{{ n.href }}" style="color:rgba(242,240,236,.7)" style-hover="color:var(--accent)">{{ n.label }}</a>
+</sc-for>
+</nav>
+<nav style="display:grid;gap:11px;font-size:12.5px;letter-spacing:.1em;text-transform:uppercase;font-weight:500">
+<sc-for list="{{ socials }}" as="s" hint-placeholder-count="2">
+<a href="{{ s.url }}" target="_blank" rel="noopener" style="color:rgba(242,240,236,.7)" style-hover="color:var(--accent)">{{ s.label }}</a>
+</sc-for>
+</nav>
+<div style="display:grid;gap:11px;font-size:calc(var(--bs) * .85);color:rgba(242,240,236,.6);font-weight:300">
+<a href="{{ footer.mailto }}" style="color:rgba(242,240,236,.85)" style-hover="color:var(--accent)">{{ footer.email }}</a>
+<span>{{ footer.location }}</span>
+</div>
+</div>
+<div style="max-width:var(--cw);margin:clamp(34px,5vw,64px) auto 0;display:flex;flex-wrap:wrap;gap:12px;justify-content:space-between;font-family:ui-monospace,Menlo,monospace;font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:rgba(242,240,236,.35)">
+<span>{{ footer.copyright }}</span><span>{{ footer.note }}</span>
+</div>
+</footer>
+</div>
+</sc-if>
+
+<sc-if value="{{ isShowcase }}" hint-placeholder-val="{{ false }}">
+<div style="background:#0a0a0a">
+<header style="position:sticky;top:0;z-index:60;display:flex;align-items:center;justify-content:space-between;gap:18px;padding:18px var(--pad);background:rgba(10,10,10,.78);backdrop-filter:blur(14px);border-bottom:1px solid rgba(255,255,255,.08)">
+<span onClick="{{ goHome }}" role="link" tabIndex="0" aria-label="{{ logoDark.alt }} — home" style="cursor:pointer;display:flex;align-items:center;font-family:var(--hf);font-weight:700;letter-spacing:.24em;font-size:15px;min-height:44px">
+<sc-if value="{{ logoDark.has }}" hint-placeholder-val="{{ false }}">{{ logoDark.el }}</sc-if>
+<sc-if value="{{ logoDark.none }}" hint-placeholder-val="{{ true }}">{{ brandName }}</sc-if>
+</span>
+<span onClick="{{ goHome }}" style="cursor:pointer;font-family:ui-monospace,Menlo,monospace;font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:rgba(242,240,236,.65)" style-hover="color:var(--accent)">&larr; Back to site</span>
+</header>
+<section style="padding:calc(clamp(70px,10vw,150px) * var(--ss)) var(--pad) calc(clamp(34px,5vw,70px) * var(--ss))">
+<div style="max-width:var(--cw);margin:0 auto">
+<h1 data-reveal style="margin:0;font-family:var(--hf);font-weight:700;font-size:calc(clamp(40px,9vw,140px) * var(--hs));line-height:.9;letter-spacing:var(--hls)">{{ showcaseTitle }}</h1>
+<p data-reveal style="margin:clamp(20px,3vw,38px) 0 0;font-size:calc(var(--bs) * 1.35);line-height:1.45;font-weight:300;color:rgba(242,240,236,.78);max-width:26ch">{{ showcaseSub }}</p>
+</div>
+</section>
+<section style="padding:0 var(--pad) calc(clamp(70px,10vw,150px) * var(--ss));display:grid;gap:clamp(18px,3vw,44px);max-width:var(--cw);margin:0 auto;width:100%">
+<sc-for list="{{ showcaseCards }}" as="c" hint-placeholder-count="2">
+<a onClick="{{ c.open }}" data-reveal style="position:relative;display:block;cursor:pointer;color:inherit;overflow:hidden;border-radius:var(--r);min-height:min(74vh,620px);display:flex;align-items:flex-end;padding:clamp(24px,4vw,56px);background:repeating-linear-gradient(118deg,#141414 0 14px,#1c1c1c 14px 28px)" style-hover="outline:1px solid var(--accent)">
+<sc-if value="{{ c.hasMedia }}" hint-placeholder-val="{{ false }}">{{ c.mediaEl }}</sc-if>
+<sc-if value="{{ c.noMedia }}" hint-placeholder-val="{{ true }}">
+<span style="position:absolute;top:16px;right:18px;font-family:ui-monospace,Menlo,monospace;font-size:9.5px;letter-spacing:.2em;text-transform:uppercase;color:rgba(255,255,255,.34)">upload landing card media in CMS</span>
+</sc-if>
+<span style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(10,10,10,.28),rgba(10,10,10,.86))"></span>
+<span style="position:relative;display:grid;gap:clamp(12px,1.6vw,20px);max-width:38ch">
+<span style="font-family:ui-monospace,Menlo,monospace;font-size:10.5px;letter-spacing:.28em;text-transform:uppercase;color:var(--accent)">{{ c.count }}</span>
+<span style="font-family:var(--hf);font-weight:700;font-size:calc(clamp(32px,6.6vw,96px) * var(--hs));line-height:.94;letter-spacing:var(--hls)">{{ c.label }}</span>
+<span style="font-size:calc(var(--bs) * 1.1);line-height:1.5;font-weight:300;color:rgba(242,240,236,.82)">{{ c.blurb }}</span>
+<span style="display:inline-flex;align-items:center;gap:10px;justify-self:start;margin-top:4px;font-weight:600;font-size:12.5px;letter-spacing:.14em;text-transform:uppercase;border-bottom:1px solid var(--accent);padding-bottom:5px;min-height:44px">{{ c.cardLabel }} <span style="color:var(--accent)">&rarr;</span></span>
+</span>
+</a>
+</sc-for>
+</section>
+</div>
+</sc-if>
+
+<sc-if value="{{ isShowcaseCat }}" hint-placeholder-val="{{ false }}">
+<div style="background:#0a0a0a;display:flex;flex-direction:column">
+<header style="order:-5;position:sticky;top:0;z-index:60;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;padding:16px var(--pad);background:rgba(10,10,10,.8);backdrop-filter:blur(14px);border-bottom:1px solid rgba(255,255,255,.08)">
+<span onClick="{{ goShowcase }}" style="cursor:pointer;font-family:ui-monospace,Menlo,monospace;font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:rgba(242,240,236,.65)" style-hover="color:var(--accent)">&larr; Showcase</span>
+<span onClick="{{ goHome }}" role="link" tabIndex="0" aria-label="{{ logoDark.alt }} — home" style="cursor:pointer;display:flex;align-items:center;font-family:var(--hf);font-weight:700;letter-spacing:.24em;font-size:15px;min-height:44px">
+<sc-if value="{{ logoDark.has }}" hint-placeholder-val="{{ false }}">{{ logoDark.el }}</sc-if>
+<sc-if value="{{ logoDark.none }}" hint-placeholder-val="{{ true }}">{{ brandName }}</sc-if>
+</span>
+<span style="display:flex;gap:16px">
+<sc-for list="{{ sc.others }}" as="o" hint-placeholder-count="1">
+<span onClick="{{ o.onClick }}" style="cursor:pointer;font-family:ui-monospace,Menlo,monospace;font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:rgba(242,240,236,.65)" style-hover="color:var(--accent)">{{ o.label }} &rarr;</span>
+</sc-for>
+</span>
+</header>
+
+<section style="order:-4;position:relative;min-height:min(72vh,680px);display:flex;align-items:flex-end;overflow:hidden;padding:clamp(80px,12vw,150px) var(--pad) calc(clamp(30px,4vw,60px) * var(--ss))">
+<div style="position:absolute;inset:0;background:repeating-linear-gradient(118deg,#131313 0 14px,#1b1b1b 14px 28px)"></div>
+<sc-if value="{{ sc.heroHas }}" hint-placeholder-val="{{ false }}">{{ sc.heroEl }}</sc-if>
+<sc-if value="{{ sc.heroNone }}" hint-placeholder-val="{{ true }}">
+<span style="position:absolute;left:0;right:0;bottom:18px;padding:0 var(--pad);font-family:ui-monospace,Menlo,monospace;font-size:9.5px;letter-spacing:.2em;text-transform:uppercase;color:rgba(255,255,255,.34)">upload hero media in CMS &rarr; Showcase pages</span>
+</sc-if>
+<div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(10,10,10,.62),rgba(10,10,10,.3) 45%,rgba(10,10,10,.95))"></div>
+<div style="position:absolute;left:2%;top:10%;width:44%;height:50%;background:radial-gradient(closest-side,rgba(255,90,31,.16),transparent);animation:insSpark 12s ease-in-out infinite"></div>
+<div style="position:relative;max-width:var(--cw);width:100%;margin:0 auto">
+<h1 style="margin:0;font-family:var(--hf);font-weight:700;font-size:calc(clamp(38px,9vw,132px) * var(--hs));line-height:.9;letter-spacing:var(--hls)">{{ sc.heroTitle }}</h1>
+<p style="margin:clamp(16px,2.4vw,30px) 0 0;font-size:calc(var(--bs) * 1.3);line-height:1.45;font-weight:300;color:rgba(242,240,236,.82);max-width:30ch">{{ sc.heroSub }}</p>
+</div>
+</section>
+
+<section style="order:-3;display:{{ sc.introDisplay }};padding:calc(clamp(48px,7vw,110px) * var(--ss)) var(--pad) 0">
+<div style="max-width:var(--cw);margin:0 auto">
+<p data-reveal style="margin:0;font-family:'Instrument Serif',Georgia,serif;font-size:calc(var(--bs) * 1.85);line-height:1.35;color:rgba(242,240,236,.86);max-width:34ch">{{ sc.intro }}</p>
+</div>
+</section>
+
+<section style="order:-2;display:{{ sc.videoDisplay }};padding:calc(clamp(56px,8vw,120px) * var(--ss)) var(--pad) 0;min-width:0">
+<div style="max-width:var(--cw);margin:0 auto">
+<div style="display:grid;gap:14px;border-top:1px solid rgba(255,255,255,.1);padding-top:clamp(26px,3.4vw,46px);margin-bottom:clamp(26px,3.6vw,52px)">
+<div style="font-family:ui-monospace,Menlo,monospace;font-size:10px;letter-spacing:.3em;text-transform:uppercase;color:var(--accent)">{{ sc.filmCount }}</div>
+<div style="display:flex;flex-wrap:wrap;gap:20px;justify-content:space-between;align-items:baseline">
+<h2 data-reveal style="margin:0;font-family:var(--hf);font-weight:700;font-size:calc(clamp(26px,4.4vw,62px) * var(--hs));letter-spacing:var(--hls);line-height:1">{{ sc.videoTitle }}</h2>
+<p style="margin:0;font-size:calc(var(--bs) * .95);color:rgba(242,240,236,.6);max-width:34ch;font-weight:300">{{ sc.videoDesc }}</p>
+</div>
+</div>
+<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,360px),1fr));gap:clamp(18px,2.6vw,38px)">
+<sc-for list="{{ sc.videos }}" as="v" hint-placeholder-count="4">
+<div data-reveal style="display:block;min-width:0">
+<div style="position:relative;overflow:hidden;border-radius:var(--r);aspect-ratio:16/9;background:#111;border-top:2px solid {{ v.featBorder }}">
+<sc-if value="{{ v.hasVideo }}" hint-placeholder-val="{{ true }}">{{ v.frame }}</sc-if>
+<sc-if value="{{ v.noVideo }}" hint-placeholder-val="{{ false }}">
+<span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:14px;font-family:ui-monospace,Menlo,monospace;font-size:9.5px;letter-spacing:.22em;text-transform:uppercase;color:rgba(255,255,255,.3)">add a YouTube link in CMS &rarr; Showcase</span>
+</sc-if>
+</div>
+<div style="padding-top:15px;display:grid;gap:9px">
+<div style="font-family:ui-monospace,Menlo,monospace;font-size:10px;letter-spacing:.24em;text-transform:uppercase;color:rgba(242,240,236,.48)">{{ v.meta }}</div>
+<h3 style="margin:0;font-family:var(--hf);font-weight:500;font-size:calc(clamp(17px,1.8vw,25px) * var(--hs));line-height:1.18;letter-spacing:var(--hls)">{{ v.title }}</h3>
+<p style="margin:0;font-size:calc(var(--bs) * .92);line-height:1.55;font-weight:300;color:rgba(242,240,236,.62);max-width:44ch">{{ v.description }}</p>
+</div>
+</div>
+</sc-for>
+</div>
+</div>
+</section>
+
+<section style="order:-1;display:{{ sc.photoDisplay }};padding:calc(clamp(64px,9vw,130px) * var(--ss)) var(--pad) 0;min-width:0">
+<div style="max-width:var(--cw);margin:0 auto">
+<div style="display:grid;gap:14px;border-top:1px solid rgba(255,255,255,.1);padding-top:clamp(26px,3.4vw,46px);margin-bottom:clamp(30px,4vw,60px)">
+<div style="font-family:ui-monospace,Menlo,monospace;font-size:10px;letter-spacing:.3em;text-transform:uppercase;color:var(--accent)">{{ sc.groupCount }}</div>
+<div style="display:flex;flex-wrap:wrap;gap:20px;justify-content:space-between;align-items:baseline">
+<h2 data-reveal style="margin:0;font-family:var(--hf);font-weight:700;font-size:calc(clamp(26px,4.4vw,62px) * var(--hs));letter-spacing:var(--hls);line-height:1">{{ sc.photoTitle }}</h2>
+<p style="margin:0;font-size:calc(var(--bs) * .95);color:rgba(242,240,236,.6);max-width:34ch;font-weight:300">{{ sc.photoDesc }}</p>
+</div>
+</div>
+<div style="display:grid;gap:clamp(44px,6vw,96px)">
+<sc-for list="{{ sc.groups }}" as="g" hint-placeholder-count="5">
+<div style="display:grid;gap:clamp(16px,2vw,26px);min-width:0">
+<div data-reveal style="display:grid;grid-template-columns:minmax(0,auto) minmax(0,1fr);gap:clamp(14px,2.4vw,34px);align-items:baseline">
+<span style="font-family:ui-monospace,Menlo,monospace;font-size:11px;letter-spacing:.14em;color:var(--accent)">{{ g.num }}</span>
+<div style="display:grid;gap:8px">
+<h3 style="margin:0;font-family:var(--hf);font-weight:600;font-size:calc(clamp(18px,2.2vw,32px) * var(--hs));line-height:1.1;letter-spacing:var(--hls)">{{ g.title }}</h3>
+<p style="margin:0;font-size:calc(var(--bs) * .92);line-height:1.55;font-weight:300;color:rgba(242,240,236,.58);max-width:52ch">{{ g.description }}</p>
+<span style="font-family:ui-monospace,Menlo,monospace;font-size:9.5px;letter-spacing:.2em;text-transform:uppercase;color:rgba(242,240,236,.32)">{{ g.countLabel }}</span>
+</div>
+</div>
+<div style="display:grid;grid-template-columns:{{ sc.groupTracks }};gap:clamp(8px,1.2vw,16px)">
+<sc-for list="{{ g.cells }}" as="cl" hint-placeholder-count="5">
+<a onClick="{{ cl.open }}" data-reveal style="grid-column:{{ cl.wide }};position:relative;display:block;cursor:pointer;overflow:hidden;border-radius:var(--r);aspect-ratio:{{ cl.ratio }};background:repeating-linear-gradient(118deg,#151515 0 12px,#1d1d1d 12px 24px)" style-hover="outline:1px solid var(--accent)">
+<sc-if value="{{ cl.has }}" hint-placeholder-val="{{ false }}">{{ cl.el }}</sc-if>
+<sc-if value="{{ cl.none }}" hint-placeholder-val="{{ true }}">
+<span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:ui-monospace,Menlo,monospace;font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:rgba(255,255,255,.22)">empty</span>
+</sc-if>
+</a>
+</sc-for>
+</div>
+</div>
+</sc-for>
+</div>
+</div>
+</section>
+
+<section style="order:50;display:{{ sc.emptyDisplay }};padding:calc(clamp(56px,8vw,110px) * var(--ss)) var(--pad) 0">
+<div style="max-width:var(--cw);margin:0 auto;border:1px dashed rgba(255,255,255,.2);padding:clamp(32px,5vw,70px);text-align:center">
+<div style="font-weight:500;font-size:calc(var(--bs) * 1.05)">Nothing published in this category yet</div>
+<div style="font-family:ui-monospace,Menlo,monospace;font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;color:rgba(242,240,236,.45);margin-top:10px">CMS &rarr; Content &rarr; Showcase</div>
+</div>
+</section>
+
+<section style="order:90;position:relative;overflow:hidden;padding:calc(clamp(80px,12vw,180px) * var(--ss)) var(--pad);margin-top:calc(clamp(56px,8vw,120px) * var(--ss));border-top:1px solid rgba(255,255,255,.08)">
+<div style="position:absolute;left:6%;top:8%;width:44%;height:56%;background:radial-gradient(closest-side,rgba(255,90,31,.18),transparent);animation:insSpark 11s ease-in-out infinite"></div>
+<div style="position:relative;max-width:var(--cw);margin:0 auto;text-align:center;display:grid;justify-items:center;gap:clamp(20px,3vw,36px)">
+<h2 data-reveal style="margin:0;font-family:var(--hf);font-weight:700;font-size:calc(clamp(28px,6.4vw,104px) * var(--hs));line-height:.96;letter-spacing:var(--hls);max-width:24ch">{{ sc.ctaTitle }}</h2>
+<a data-reveal href="{{ sc.ctaHref }}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:12px;background:var(--accent);color:#0a0a0a;font-weight:600;font-size:13px;letter-spacing:.14em;text-transform:uppercase;padding:19px 30px;min-height:50px;border-radius:var(--r);transition:transform .35s cubic-bezier(.2,.8,.2,1),background .3s" style-hover="background:#fff;transform:translateY(-2px)">{{ sc.ctaButton }} <span>&rarr;</span></a>
+<div style="font-family:ui-monospace,Menlo,monospace;font-size:10.5px;letter-spacing:.26em;text-transform:uppercase;color:rgba(242,240,236,.45)">{{ cta.location }}</div>
+</div>
+</section>
+</div>
+</sc-if>
+
+<sc-if value="{{ lb.open }}" hint-placeholder-val="{{ false }}">
+<div onClick="{{ lb.close }}" style="position:fixed;inset:0;z-index:300;background:rgba(6,6,6,.95);backdrop-filter:blur(6px);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:clamp(48px,7vw,80px) clamp(12px,3vw,40px)">
+<span onClick="{{ lb.close }}" style="position:absolute;top:18px;right:20px;cursor:pointer;width:44px;height:44px;display:inline-flex;align-items:center;justify-content:center;font-size:22px;color:rgba(242,240,236,.7)" style-hover="color:var(--accent)">&times;</span>
+<div onClick="{{ lb.stop }}" style="display:flex;align-items:center;justify-content:center">{{ lb.el }}</div>
+<div style="display:flex;align-items:center;gap:18px;flex-wrap:wrap;justify-content:center">
+<span onClick="{{ lb.prev }}" style="display:{{ lb.navDisplay }};cursor:pointer;align-items:center;justify-content:center;width:44px;height:44px;border:1px solid rgba(255,255,255,.2);color:rgba(242,240,236,.75)" style-hover="border-color:var(--accent);color:var(--accent)">&larr;</span>
+<span style="font-family:ui-monospace,Menlo,monospace;font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;color:rgba(242,240,236,.65);text-align:center">{{ lb.caption }} <span style="color:rgba(242,240,236,.35);margin-left:8px">{{ lb.counter }}</span></span>
+<span onClick="{{ lb.next }}" style="display:{{ lb.navDisplay }};cursor:pointer;align-items:center;justify-content:center;width:44px;height:44px;border:1px solid rgba(255,255,255,.2);color:rgba(242,240,236,.75)" style-hover="border-color:var(--accent);color:var(--accent)">&rarr;</span>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ loginOpen }}" hint-placeholder-val="{{ false }}">
+<div style="position:fixed;inset:0;z-index:400;background:rgba(6,6,6,.94);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;padding:24px">
+<form onSubmit="{{ login.submit }}" style="width:100%;max-width:380px;background:#101010;border:1px solid rgba(255,255,255,.12);padding:clamp(24px,4vw,36px);display:grid;gap:18px">
+<div style="display:grid;gap:7px">
+<div style="font-family:var(--hf);font-weight:700;letter-spacing:.24em;font-size:14px">{{ brandName }} <span style="color:var(--accent)">CMS</span></div>
+<div style="font-family:ui-monospace,Menlo,monospace;font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:rgba(242,240,236,.4)">Administrator sign in</div>
+</div>
+<label style="display:grid;gap:7px">
+<span style="font-family:ui-monospace,Menlo,monospace;font-size:9.5px;letter-spacing:.18em;text-transform:uppercase;color:rgba(242,240,236,.45)">Username</span>
+<input type="text" value="{{ login.user }}" onChange="{{ login.setUser }}" autoComplete="username" style="width:100%;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.14);color:#f2f0ec;padding:11px 12px;font-size:13.5px">
+</label>
+<label style="display:grid;gap:7px">
+<span style="font-family:ui-monospace,Menlo,monospace;font-size:9.5px;letter-spacing:.18em;text-transform:uppercase;color:rgba(242,240,236,.45)">Password</span>
+<span style="display:flex;gap:8px">
+<input type="{{ login.passType }}" value="{{ login.pass }}" onChange="{{ login.setPass }}" autoComplete="current-password" style="flex:1;min-width:0;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.14);color:#f2f0ec;padding:11px 12px;font-size:13.5px">
+<span onClick="{{ login.toggle }}" style="cursor:pointer;display:inline-flex;align-items:center;padding:0 13px;min-height:44px;border:1px solid rgba(255,255,255,.14);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:rgba(242,240,236,.65)" style-hover="border-color:var(--accent);color:var(--accent)">{{ login.toggleLabel }}</span>
+</span>
+</label>
+<div style="display:{{ login.errorDisplay }};font-size:12.5px;line-height:1.5;color:#ff7a5e;border-left:2px solid #ff7a5e;padding-left:11px">{{ login.error }}</div>
+<button type="submit" style="width:100%;cursor:pointer;border:none;background:{{ login.buttonBg }};color:{{ login.buttonFg }};font-weight:600;font-size:12.5px;letter-spacing:.14em;text-transform:uppercase;padding:15px;min-height:48px">{{ login.buttonLabel }}</button>
+<span onClick="{{ login.close }}" style="cursor:pointer;text-align:center;font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;color:rgba(242,240,236,.4)" style-hover="color:var(--accent)">Back to site</span>
+</form>
+</div>
+</sc-if>
+
+<sc-if value="{{ sbLoginOpen }}" hint-placeholder-val="{{ false }}">
+<div style="position:fixed;inset:0;z-index:400;background:#0a0a0a;display:flex;align-items:center;justify-content:center;padding:24px">
+<div style="width:100%;max-width:400px;background:#101010;border:1px solid rgba(255,255,255,.12);padding:clamp(24px,4vw,36px);display:grid;gap:20px">
+<div style="display:grid;gap:7px">
+<div style="font-family:var(--hf);font-weight:700;letter-spacing:.24em;font-size:14px">{{ brandName }} <span style="color:var(--accent)">CMS</span></div>
+<div style="font-family:ui-monospace,Menlo,monospace;font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:rgba(242,240,236,.4)">Administrator sign in</div>
+</div>
+<form onSubmit="{{ sbLogin.submit }}" style="display:{{ sbLogin.formDisplay }};gap:16px">
+<label style="display:grid;gap:7px">
+<span style="font-family:ui-monospace,Menlo,monospace;font-size:9.5px;letter-spacing:.18em;text-transform:uppercase;color:rgba(242,240,236,.45)">Email address</span>
+<input type="email" value="{{ sbLogin.email }}" onChange="{{ sbLogin.setEmail }}" autoComplete="email" style="width:100%;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.14);color:#f2f0ec;padding:13px 12px;min-height:46px;font-size:13.5px">
+</label>
+<div style="display:{{ sbLogin.errorDisplay }};font-size:12.5px;line-height:1.5;color:#ff7a5e;border-left:2px solid #ff7a5e;padding-left:11px">{{ sbLogin.error }}</div>
+<button type="submit" style="width:100%;cursor:pointer;border:none;background:var(--accent);color:#0a0a0a;font-weight:600;font-size:12.5px;letter-spacing:.14em;text-transform:uppercase;padding:15px;min-height:48px">{{ sbLogin.buttonLabel }}</button>
+<div style="font-size:11.5px;line-height:1.6;color:rgba(242,240,236,.42)">No password. We email a one-time sign-in link.</div>
+</form>
+<div style="display:{{ sbLogin.sentDisplay }};gap:14px">
+<div style="font-weight:500;font-size:calc(var(--bs) * 1.05);line-height:1.4">Check your email<span style="color:var(--accent)">.</span></div>
+<div style="font-size:12.5px;line-height:1.6;color:rgba(242,240,236,.6)">We sent a sign-in link to <span style="color:#f2f0ec">{{ sbLogin.email }}</span>. Open it on this device — the link signs you straight into the editor.</div>
+<span onClick="{{ sbLogin.again }}" style="cursor:pointer;display:inline-flex;align-items:center;min-height:44px;font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;color:rgba(242,240,236,.5)" style-hover="color:var(--accent)">Use a different email</span>
+</div>
+<span onClick="{{ sbLogin.close }}" style="cursor:pointer;display:flex;align-items:center;justify-content:center;min-height:44px;font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;color:rgba(242,240,236,.4)" style-hover="color:var(--accent)">Back to site</span>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isCms }}" hint-placeholder-val="{{ false }}">
+<div style="min-height:100vh;display:grid;grid-template-columns:minmax(0,236px) minmax(0,1fr);background:#0d0d0d;font-family:Poppins,sans-serif">
+<div style="display:{{ toastDisplay }};position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:300;align-items:center;gap:12px;background:#151515;border:1px solid var(--accent);color:#f2f0ec;padding:14px 20px;font-size:12.5px;letter-spacing:.04em;max-width:min(92vw,520px)">{{ toast }}</div>
+<aside style="border-right:1px solid rgba(255,255,255,.09);padding:24px 18px;display:grid;gap:22px;align-content:start;position:sticky;top:0;height:100vh;overflow:auto">
+<div style="font-weight:700;letter-spacing:.2em;font-size:13px">{{ brandName }} <span style="color:var(--accent)">CMS</span></div>
+<sc-for list="{{ navGroups }}" as="g" hint-placeholder-count="4">
+<div style="display:grid;gap:5px">
+<div style="font-family:ui-monospace,Menlo,monospace;font-size:9.5px;letter-spacing:.24em;text-transform:uppercase;color:rgba(242,240,236,.35);margin-bottom:4px">{{ g.title }}</div>
+<sc-for list="{{ g.items }}" as="item" hint-placeholder-count="5">
+<div onClick="{{ item.onClick }}" style="cursor:pointer;padding:9px 10px;font-size:13.5px;font-weight:500;background:{{ item.bg }};color:{{ item.fg }};border-left:2px solid {{ item.bar }}" style-hover="background:rgba(255,255,255,.06)">{{ item.label }}</div>
+</sc-for>
+</div>
+</sc-for>
+<div style="display:grid;gap:8px;border-top:1px solid rgba(255,255,255,.09);padding-top:16px">
+<span onClick="{{ exportConfig }}" style="cursor:pointer;padding:9px 10px;border:1px solid rgba(255,255,255,.18);font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;text-align:center" style-hover="border-color:var(--accent);color:var(--accent)">Export content</span>
+<label style="cursor:pointer;padding:9px 10px;border:1px solid rgba(255,255,255,.18);font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;text-align:center" style-hover="border-color:var(--accent);color:var(--accent)">Import content<input type="file" accept="application/json" onChange="{{ importConfig }}" style="display:none"></label>
+<span onClick="{{ resetConfig }}" style="cursor:pointer;padding:9px 10px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;text-align:center;color:rgba(242,240,236,.4)" style-hover="color:#ff6b6b">Reset to defaults</span>
+<span onClick="{{ cmsLogout }}" style="cursor:pointer;padding:9px 10px;border:1px solid rgba(255,255,255,.18);font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;text-align:center;margin-top:4px" style-hover="border-color:#ff6b6b;color:#ff6b6b">Log out</span>
+</div>
+</aside>
+
+<main style="padding:0 0 70px;min-width:0">
+<div style="display:flex;flex-wrap:wrap;gap:14px;align-items:center;justify-content:space-between;padding:18px clamp(16px,3vw,32px);border-bottom:1px solid rgba(255,255,255,.09);position:sticky;top:0;background:rgba(13,13,13,.94);backdrop-filter:blur(10px);z-index:10">
+<div style="display:flex;align-items:baseline;gap:12px;min-width:0"><h1 style="margin:0;font-weight:600;font-size:19px;letter-spacing:-.01em">{{ cmsTitle }}</h1><span style="font-family:ui-monospace,Menlo,monospace;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:rgba(242,240,236,.4)">{{ sbSaveNote }}</span><span onClick="{{ sbRetry }}" style="display:{{ sbRetryDisplay }};cursor:pointer;align-items:center;min-height:32px;padding:0 10px;border:1px solid #ff7a5e;color:#ff7a5e;font-family:ui-monospace,Menlo,monospace;font-size:10px;letter-spacing:.14em;text-transform:uppercase" style-hover="background:rgba(255,122,94,.12)">Retry</span></div>
+<div style="display:flex;gap:10px">
+<span onClick="{{ goHome }}" style="cursor:pointer;display:inline-flex;align-items:center;min-height:38px;padding:0 16px;border:1px solid rgba(255,255,255,.2);font-size:12px;font-weight:500;letter-spacing:.08em;text-transform:uppercase" style-hover="border-color:var(--accent);color:var(--accent)">View site</span>
+<span onClick="{{ publishAction }}" style="cursor:pointer;display:inline-flex;align-items:center;min-height:38px;padding:0 18px;background:var(--accent);color:#0a0a0a;font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase" style-hover="background:#fff">{{ publishLabel }}</span>
+</div>
+</div>
+
+<div style="display:{{ sbSaveErrDisplay }};margin:14px clamp(16px,3vw,32px) 0;border-left:2px solid #ff7a5e;padding:10px 14px;background:rgba(255,122,94,.08);font-size:12.5px;line-height:1.55;color:#ffb5a4">{{ sbSaveErr }}</div>
+
+<div style="padding:clamp(18px,3vw,30px);max-width:1080px">
+<div style="display:{{ catSwitchDisplay }};flex-wrap:wrap;gap:8px;margin-bottom:18px">
+<sc-for list="{{ catSwitch }}" as="cs" hint-placeholder-count="2">
+<span onClick="{{ cs.onClick }}" style="cursor:pointer;display:inline-flex;align-items:center;min-height:38px;padding:0 16px;border:1px solid {{ cs.border }};background:{{ cs.bg }};color:{{ cs.fg }};font-weight:600;font-size:11.5px;letter-spacing:.14em;text-transform:uppercase">{{ cs.label }}</span>
+</sc-for>
+</div>
+<p style="margin:0 0 20px;font-size:13px;line-height:1.6;color:rgba(242,240,236,.5);max-width:70ch">{{ tabHelp }}</p>
+
+<sc-if value="{{ hasFields }}" hint-placeholder-val="{{ true }}">
+<div style="border:1px solid rgba(255,255,255,.09);padding:4px 18px 14px">
+<sc-for list="{{ fields }}" as="f" hint-placeholder-count="6">
+<div style="display:grid;gap:9px;padding:14px 0;border-bottom:1px solid rgba(255,255,255,.06)">
+<div style="display:flex;justify-content:space-between;gap:14px;align-items:baseline">
+<span style="font-size:13px;font-weight:500">{{ f.label }}</span>
+<span style="font-family:ui-monospace,Menlo,monospace;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:rgba(242,240,236,.35);text-align:right">{{ f.hint }}</span>
+</div>
+<sc-if value="{{ f.isText }}" hint-placeholder-val="{{ true }}">
+<input type="text" value="{{ f.value }}" onChange="{{ f.onChange }}" style="width:100%;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);color:#f2f0ec;padding:10px 12px;font-size:13.5px">
+</sc-if>
+<sc-if value="{{ f.isArea }}" hint-placeholder-val="{{ false }}">
+<textarea rows="3" value="{{ f.value }}" onChange="{{ f.onChange }}" style="width:100%;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);color:#f2f0ec;padding:10px 12px;font-size:13.5px;line-height:1.5;resize:vertical"></textarea>
+</sc-if>
+<sc-if value="{{ f.isColor }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;gap:10px;align-items:center">
+<input type="color" value="{{ f.value }}" onChange="{{ f.onChange }}" style="width:46px;height:34px;padding:0;background:none;border:1px solid rgba(255,255,255,.18);cursor:pointer">
+<input type="text" value="{{ f.value }}" onChange="{{ f.onChange }}" style="flex:1;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);color:#f2f0ec;padding:10px 12px;font-family:ui-monospace,Menlo,monospace;font-size:12.5px">
+</div>
+</sc-if>
+<sc-if value="{{ f.isRange }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;gap:14px;align-items:center">
+<input type="range" min="{{ f.min }}" max="{{ f.max }}" step="{{ f.step }}" value="{{ f.value }}" onChange="{{ f.onChange }}" style="flex:1;accent-color:var(--accent)">
+<span style="font-family:ui-monospace,Menlo,monospace;font-size:11.5px;min-width:70px;text-align:right;color:rgba(242,240,236,.7)">{{ f.display }}</span>
+</div>
+</sc-if>
+<sc-if value="{{ f.isSelect }}" hint-placeholder-val="{{ false }}">
+<select value="{{ f.value }}" onChange="{{ f.onChange }}" style="width:100%;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);color:#f2f0ec;padding:10px 12px;font-size:13.5px">
+<sc-for list="{{ f.options }}" as="o" hint-placeholder-count="3"><option value="{{ o.value }}">{{ o.label }}</option></sc-for>
+</select>
+</sc-if>
+<sc-if value="{{ f.isToggle }}" hint-placeholder-val="{{ false }}">
+<span onClick="{{ f.onChange }}" style="cursor:pointer;display:inline-flex;align-items:center;width:42px;height:24px;border-radius:12px;padding:2px;background:{{ f.tBg }};justify-content:{{ f.tJustify }}"><span style="width:20px;height:20px;border-radius:50%;background:{{ f.tKnob }}"></span></span>
+</sc-if>
+<sc-if value="{{ f.isUpload }}" hint-placeholder-val="{{ false }}">
+<div style="display:grid;gap:10px">
+<div style="display:flex;flex-wrap:wrap;gap:8px">
+<sc-for list="{{ f.thumbs }}" as="th" hint-placeholder-count="2">
+<span onClick="{{ th.remove }}" title="Click to remove" style="position:relative;width:54px;height:54px;overflow:hidden;cursor:pointer;border:1px solid rgba(255,255,255,.14);background:#1b1b1b">{{ th.el }}</span>
+</sc-for>
+</div>
+<label style="cursor:pointer;padding:9px 12px;border:1px dashed rgba(255,255,255,.25);font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;text-align:center" style-hover="border-color:var(--accent);color:var(--accent)">{{ f.uploadLabel }}<input type="file" multiple="{{ true }}" accept="image/*" onChange="{{ f.onUpload }}" style="display:none"></label>
+</div>
+</sc-if>
+</div>
+</sc-for>
+</div>
+</sc-if>
+
+<sc-if value="{{ hasLists }}" hint-placeholder-val="{{ false }}">
+<div style="display:grid;gap:26px;margin-top:24px">
+<sc-for list="{{ lists }}" as="L" hint-placeholder-count="1">
+<div style="display:grid;gap:12px">
+<div style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between">
+<span style="font-family:ui-monospace,Menlo,monospace;font-size:10.5px;letter-spacing:.22em;text-transform:uppercase;color:rgba(242,240,236,.45)">{{ L.title }}</span>
+<sc-if value="{{ L.hasAdd }}" hint-placeholder-val="{{ false }}">
+<span onClick="{{ L.onAdd }}" style="cursor:pointer;padding:8px 14px;border:1px solid var(--accent);color:var(--accent);font-size:11.5px;font-weight:600;letter-spacing:.08em;text-transform:uppercase" style-hover="background:var(--accent);color:#0a0a0a">{{ L.addLabel }}</span>
+</sc-if>
+</div>
+<sc-for list="{{ L.rows }}" as="row" hint-placeholder-count="3">
+<div style="border:1px solid rgba(255,255,255,.09);padding:14px 16px;display:grid;gap:10px">
+<div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between">
+<span style="font-weight:600;font-size:13.5px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ row.heading }}</span>
+<span style="display:flex;gap:6px;align-items:center">
+<sc-if value="{{ row.canMove }}" hint-placeholder-val="{{ true }}">
+<span onClick="{{ row.up }}" style="cursor:pointer;width:28px;height:28px;display:inline-flex;align-items:center;justify-content:center;border:1px solid rgba(255,255,255,.14);font-size:12px" style-hover="border-color:var(--accent);color:var(--accent)">&uarr;</span>
+</sc-if>
+<sc-if value="{{ row.canMove }}" hint-placeholder-val="{{ true }}">
+<span onClick="{{ row.down }}" style="cursor:pointer;width:28px;height:28px;display:inline-flex;align-items:center;justify-content:center;border:1px solid rgba(255,255,255,.14);font-size:12px" style-hover="border-color:var(--accent);color:var(--accent)">&darr;</span>
+</sc-if>
+<sc-if value="{{ row.canRemove }}" hint-placeholder-val="{{ true }}">
+<span onClick="{{ row.remove }}" style="cursor:pointer;width:28px;height:28px;display:inline-flex;align-items:center;justify-content:center;border:1px solid rgba(255,255,255,.14);font-size:14px;color:rgba(242,240,236,.55)" style-hover="border-color:#ff6b6b;color:#ff6b6b">&times;</span>
+</sc-if>
+</span>
+</div>
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr));gap:12px">
+<sc-for list="{{ row.fields }}" as="f" hint-placeholder-count="3">
+<div style="display:grid;gap:7px;align-content:start">
+<div style="display:flex;justify-content:space-between;gap:10px;align-items:baseline">
+<span style="font-family:ui-monospace,Menlo,monospace;font-size:9.5px;letter-spacing:.18em;text-transform:uppercase;color:rgba(242,240,236,.42)">{{ f.label }}</span>
+</div>
+<sc-if value="{{ f.isText }}" hint-placeholder-val="{{ true }}">
+<input type="text" value="{{ f.value }}" onChange="{{ f.onChange }}" style="width:100%;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);color:#f2f0ec;padding:9px 11px;font-size:13px">
+</sc-if>
+<sc-if value="{{ f.isArea }}" hint-placeholder-val="{{ false }}">
+<textarea rows="3" value="{{ f.value }}" onChange="{{ f.onChange }}" style="width:100%;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);color:#f2f0ec;padding:9px 11px;font-size:13px;line-height:1.5;resize:vertical"></textarea>
+</sc-if>
+<sc-if value="{{ f.isSelect }}" hint-placeholder-val="{{ false }}">
+<select value="{{ f.value }}" onChange="{{ f.onChange }}" style="width:100%;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);color:#f2f0ec;padding:9px 11px;font-size:13px">
+<sc-for list="{{ f.options }}" as="o" hint-placeholder-count="2"><option value="{{ o.value }}">{{ o.label }}</option></sc-for>
+</select>
+</sc-if>
+<sc-if value="{{ f.isToggle }}" hint-placeholder-val="{{ false }}">
+<span onClick="{{ f.onChange }}" style="cursor:pointer;display:inline-flex;align-items:center;width:42px;height:24px;border-radius:12px;padding:2px;background:{{ f.tBg }};justify-content:{{ f.tJustify }}"><span style="width:20px;height:20px;border-radius:50%;background:{{ f.tKnob }}"></span></span>
+</sc-if>
+<sc-if value="{{ f.isUpload }}" hint-placeholder-val="{{ false }}">
+<div style="display:grid;gap:9px">
+<div style="display:flex;flex-wrap:wrap;gap:7px">
+<sc-for list="{{ f.thumbs }}" as="th" hint-placeholder-count="2">
+<span onClick="{{ th.remove }}" title="Click to remove" style="position:relative;width:48px;height:48px;overflow:hidden;cursor:pointer;border:1px solid rgba(255,255,255,.14);background:#1b1b1b">{{ th.el }}</span>
+</sc-for>
+</div>
+<label style="cursor:pointer;padding:8px 11px;border:1px dashed rgba(255,255,255,.25);font-size:11px;letter-spacing:.1em;text-transform:uppercase;text-align:center" style-hover="border-color:var(--accent);color:var(--accent)">{{ f.uploadLabel }}<input type="file" multiple="{{ true }}" accept="image/*" onChange="{{ f.onUpload }}" style="display:none"></label>
+</div>
+</sc-if>
+</div>
+</sc-for>
+</div>
+</div>
+</sc-for>
+</div>
+</sc-for>
+</div>
+</sc-if>
+
+<sc-if value="{{ isBrandingTab }}" hint-placeholder-val="{{ false }}">
+<div style="display:grid;gap:22px;max-width:760px">
+<p style="margin:0;font-size:13px;line-height:1.65;color:rgba(242,240,236,.55);max-width:70ch">Upload your logo once and it appears in every header across the site &mdash; homepage, showcase, case studies. Position, spacing and responsive sizing are handled automatically; you only choose the size step. If you upload nothing, the site falls back to the INSFIRE wordmark.</p>
+
+<div style="display:grid;gap:14px">
+<sc-for list="{{ branding.slots }}" as="s" hint-placeholder-count="4">
+<div style="border:1px solid rgba(255,255,255,.09);padding:16px;display:grid;gap:12px">
+<div style="display:grid;gap:5px">
+<span style="font-size:13.5px;font-weight:600">{{ s.title }}</span>
+<span style="font-size:12px;line-height:1.55;color:rgba(242,240,236,.5)">{{ s.note }}</span>
+</div>
+<div style="display:grid;grid-template-columns:minmax(0,150px) minmax(0,1fr);gap:14px;align-items:center">
+<div style="display:flex;align-items:center;justify-content:center;min-height:76px;padding:12px;background:{{ s.bg }};border:1px solid rgba(255,255,255,.1)">
+<sc-if value="{{ s.has }}" hint-placeholder-val="{{ false }}">{{ s.el }}</sc-if>
+<sc-if value="{{ s.none }}" hint-placeholder-val="{{ true }}"><span style="font-family:ui-monospace,Menlo,monospace;font-size:9.5px;letter-spacing:.2em;text-transform:uppercase;color:rgba(128,128,128,.85)">empty</span></sc-if>
+</div>
+<div style="display:grid;gap:9px;min-width:0">
+<span style="font-family:ui-monospace,Menlo,monospace;font-size:11px;color:rgba(242,240,236,.6);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ s.name }}</span>
+<div style="display:flex;flex-wrap:wrap;gap:8px">
+<label style="cursor:pointer;display:inline-flex;align-items:center;min-height:38px;padding:0 14px;border:1px solid var(--accent);color:var(--accent);font-size:11.5px;font-weight:600;letter-spacing:.1em;text-transform:uppercase" style-hover="background:var(--accent);color:#0a0a0a">Upload<input type="file" accept="image/png,image/svg+xml,image/webp,image/jpeg" onChange="{{ s.upload }}" style="display:none"></label>
+<span onClick="{{ s.clear }}" style="cursor:pointer;display:inline-flex;align-items:center;min-height:38px;padding:0 14px;border:1px solid rgba(255,255,255,.16);font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;color:rgba(242,240,236,.55)" style-hover="border-color:#ff6b6b;color:#ff6b6b">Remove</span>
+</div>
+<select value="{{ s.value }}" onChange="{{ s.onPick }}" style="width:100%;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);color:#f2f0ec;padding:8px 10px;font-size:12px">
+<sc-for list="{{ s.options }}" as="o" hint-placeholder-count="2"><option value="{{ o.value }}">{{ o.label }}</option></sc-for>
+</select>
+</div>
+</div>
+</div>
+</sc-for>
+</div>
+
+<div style="border:1px solid rgba(255,255,255,.09);padding:18px;display:grid;gap:16px">
+<span style="font-family:ui-monospace,Menlo,monospace;font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:rgba(242,240,236,.45)">Logo settings</span>
+<label style="display:grid;gap:7px">
+<span style="font-size:13px;font-weight:500">Alt text <span style="color:rgba(242,240,236,.4);font-weight:400">&mdash; what a screen reader announces</span></span>
+<input type="text" value="{{ branding.altValue }}" onChange="{{ branding.setAlt }}" style="width:100%;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);color:#f2f0ec;padding:10px 12px;font-size:13.5px">
+</label>
+<label style="display:grid;gap:7px">
+<span style="font-size:13px;font-weight:500">Wordmark <span style="color:rgba(242,240,236,.4);font-weight:400">&mdash; used when no logo is uploaded</span></span>
+<input type="text" value="{{ branding.wordmark }}" onChange="{{ branding.setWordmark }}" style="width:100%;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);color:#f2f0ec;padding:10px 12px;font-size:13.5px">
+</label>
+<div style="display:grid;gap:9px">
+<span style="font-size:13px;font-weight:500">Logo size</span>
+<div style="display:flex;flex-wrap:wrap;gap:8px">
+<sc-for list="{{ branding.sizes }}" as="z" hint-placeholder-count="3">
+<span onClick="{{ z.onClick }}" style="cursor:pointer;display:inline-flex;align-items:center;min-height:40px;padding:0 18px;border:1px solid {{ z.border }};background:{{ z.bg }};color:{{ z.fg }};font-size:11.5px;font-weight:600;letter-spacing:.12em;text-transform:uppercase">{{ z.label }}</span>
+</sc-for>
+</div>
+<span style="font-size:12px;line-height:1.55;color:rgba(242,240,236,.45)">{{ branding.sizeNote }}</span>
+</div>
+</div>
+
+<div style="border:1px solid rgba(255,255,255,.09);padding:18px;display:grid;gap:16px">
+<span style="font-family:ui-monospace,Menlo,monospace;font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:rgba(242,240,236,.45)">Live header preview</span>
+<div style="display:grid;gap:7px">
+<span style="font-family:ui-monospace,Menlo,monospace;font-size:9.5px;letter-spacing:.18em;text-transform:uppercase;color:rgba(242,240,236,.35)">Desktop &middot; over dark sections</span>
+<div style="display:flex;align-items:center;justify-content:space-between;gap:18px;padding:18px 22px;background:#0a0a0a;border:1px solid rgba(255,255,255,.1)">
+<sc-if value="{{ branding.hasLogo }}" hint-placeholder-val="{{ false }}">{{ branding.deskDark }}</sc-if>
+<sc-if value="{{ branding.noLogo }}" hint-placeholder-val="{{ true }}"><span style="font-weight:700;letter-spacing:.24em;font-size:15px;color:#f2f0ec">{{ branding.wordmark }}</span></sc-if>
+<span style="display:flex;gap:20px;font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;color:rgba(242,240,236,.6)">
+<sc-for list="{{ branding.navPreview }}" as="n" hint-placeholder-count="4"><span>{{ n.label }}</span></sc-for>
+</span>
+</div>
+</div>
+<div style="display:grid;gap:7px">
+<span style="font-family:ui-monospace,Menlo,monospace;font-size:9.5px;letter-spacing:.18em;text-transform:uppercase;color:rgba(242,240,236,.35)">Desktop &middot; over light sections</span>
+<div style="display:flex;align-items:center;justify-content:space-between;gap:18px;padding:18px 22px;background:#f3f1ed;border:1px solid rgba(255,255,255,.1)">
+<sc-if value="{{ branding.hasLogo }}" hint-placeholder-val="{{ false }}">{{ branding.deskLight }}</sc-if>
+<sc-if value="{{ branding.noLogo }}" hint-placeholder-val="{{ true }}"><span style="font-weight:700;letter-spacing:.24em;font-size:15px;color:#0a0a0a">{{ branding.wordmark }}</span></sc-if>
+<span style="display:flex;gap:20px;font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;color:rgba(10,10,10,.6)">
+<sc-for list="{{ branding.navPreview }}" as="n" hint-placeholder-count="4"><span>{{ n.label }}</span></sc-for>
+</span>
+</div>
+</div>
+<div style="display:grid;gap:7px">
+<span style="font-family:ui-monospace,Menlo,monospace;font-size:9.5px;letter-spacing:.18em;text-transform:uppercase;color:rgba(242,240,236,.35)">Mobile</span>
+<div style="max-width:330px;display:flex;align-items:center;justify-content:space-between;gap:14px;padding:14px 16px;background:#0a0a0a;border:1px solid rgba(255,255,255,.1)">
+<sc-if value="{{ branding.hasLogo }}" hint-placeholder-val="{{ false }}">{{ branding.mob }}</sc-if>
+<sc-if value="{{ branding.noLogo }}" hint-placeholder-val="{{ true }}"><span style="font-weight:700;letter-spacing:.22em;font-size:13px;color:#f2f0ec">{{ branding.wordmark }}</span></sc-if>
+<span style="display:grid;gap:4px;width:20px">
+<span style="height:1px;background:rgba(242,240,236,.75)"></span>
+<span style="height:1px;background:rgba(242,240,236,.75)"></span>
+</span>
+</div>
+</div>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isHealthTab }}" hint-placeholder-val="{{ false }}">
+<div style="display:grid;gap:22px;max-width:760px">
+<div style="border:1px solid rgba(255,255,255,.09);padding:20px;display:grid;gap:16px">
+<div style="display:flex;flex-wrap:wrap;gap:12px;justify-content:space-between;align-items:baseline">
+<span style="font-family:ui-monospace,Menlo,monospace;font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:rgba(242,240,236,.45)">Page checks</span>
+<span style="font-size:12.5px;color:var(--accent)">{{ health.summary }}</span>
+</div>
+<div style="display:grid;gap:10px">
+<sc-for list="{{ health.rows }}" as="r" hint-placeholder-count="6">
+<div style="display:grid;grid-template-columns:18px minmax(0,1fr);gap:11px;align-items:start;padding-bottom:10px;border-bottom:1px solid rgba(255,255,255,.06)">
+<span style="color:{{ r.color }};font-size:13px">{{ r.mark }}</span>
+<div style="display:grid;gap:4px;min-width:0">
+<span style="font-size:13.5px;font-weight:500">{{ r.label }} <span style="font-family:ui-monospace,Menlo,monospace;font-size:11px;color:rgba(242,240,236,.4);margin-left:6px">{{ r.slug }}</span></span>
+<span style="font-size:12.5px;line-height:1.5;color:{{ r.color }}">{{ r.status }}</span>
+</div>
+</div>
+</sc-for>
+</div>
+</div>
+<div style="display:{{ health.globalDisplay }};border:1px solid rgba(255,255,255,.09);padding:20px;gap:12px">
+<span style="font-family:ui-monospace,Menlo,monospace;font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:rgba(242,240,236,.45)">Site-wide to fix</span>
+<sc-for list="{{ health.global }}" as="g" hint-placeholder-count="3">
+<div style="font-size:13px;line-height:1.55;color:rgba(242,240,236,.75);border-left:2px solid #ff7a5e;padding-left:11px">{{ g.text }}</div>
+</sc-for>
+</div>
+<div style="display:{{ health.hiddenDisplay }};border:1px solid rgba(255,255,255,.09);padding:20px;gap:12px">
+<span style="font-family:ui-monospace,Menlo,monospace;font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:rgba(242,240,236,.45)">Currently hidden from visitors and search</span>
+<sc-for list="{{ health.hidden }}" as="h" hint-placeholder-count="2">
+<div style="font-size:13px;line-height:1.55;color:rgba(242,240,236,.6)">{{ h.text }}</div>
+</sc-for>
+</div>
+<p style="margin:0;font-size:12.5px;line-height:1.7;color:rgba(242,240,236,.45)">These are practical checks, not a ranking score — no tool can predict Google rankings. Two things this single-file site cannot do on its own: serve <span style="color:rgba(242,240,236,.7)">/sitemap.xml</span> and <span style="color:rgba(242,240,236,.7)">/robots.txt</span>, and give each page its own real URL. Both need the backend build in your handoff spec.</p>
+</div>
+</sc-if>
+
+<sc-if value="{{ isAccountTab }}" hint-placeholder-val="{{ false }}">
+<div style="display:grid;gap:18px;max-width:520px">
+<div style="display:{{ acct.warnDisplay }};font-size:13px;line-height:1.6;color:#0a0a0a;background:var(--accent);padding:13px 15px">You are still using the default credentials. Change them now — anyone who knows the defaults can open this editor.</div>
+<div style="border:1px solid rgba(255,255,255,.09);padding:20px;display:grid;gap:16px">
+<div style="font-family:ui-monospace,Menlo,monospace;font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:rgba(242,240,236,.45)">Account settings</div>
+<label style="display:grid;gap:7px">
+<span style="font-size:13px;font-weight:500">Username</span>
+<input type="text" value="{{ acct.user }}" onChange="{{ acct.setUser }}" style="width:100%;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);color:#f2f0ec;padding:10px 12px;font-size:13.5px">
+</label>
+<label style="display:grid;gap:7px">
+<span style="font-size:13px;font-weight:500">Current password <span style="color:var(--accent)">*</span></span>
+<input type="password" value="{{ acct.cur }}" onChange="{{ acct.setCur }}" autoComplete="current-password" style="width:100%;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);color:#f2f0ec;padding:10px 12px;font-size:13.5px">
+</label>
+<label style="display:grid;gap:7px">
+<span style="font-size:13px;font-weight:500">New password <span style="color:rgba(242,240,236,.4);font-weight:400">— min 8 characters, leave blank to keep current</span></span>
+<input type="password" value="{{ acct.next }}" onChange="{{ acct.setNext }}" autoComplete="new-password" style="width:100%;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);color:#f2f0ec;padding:10px 12px;font-size:13.5px">
+</label>
+<label style="display:grid;gap:7px">
+<span style="font-size:13px;font-weight:500">Confirm new password</span>
+<input type="password" value="{{ acct.confirm }}" onChange="{{ acct.setConfirm }}" autoComplete="new-password" style="width:100%;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);color:#f2f0ec;padding:10px 12px;font-size:13.5px">
+</label>
+<div style="display:{{ acct.errDisplay }};font-size:12.5px;line-height:1.5;color:#ff7a5e;border-left:2px solid #ff7a5e;padding-left:11px">{{ acct.err }}</div>
+<div style="display:{{ acct.msgDisplay }};font-size:12.5px;line-height:1.5;color:var(--accent);border-left:2px solid var(--accent);padding-left:11px">{{ acct.msg }}</div>
+<span onClick="{{ acct.save }}" style="cursor:pointer;justify-self:start;display:inline-flex;align-items:center;min-height:44px;padding:0 20px;background:var(--accent);color:#0a0a0a;font-weight:600;font-size:12px;letter-spacing:.1em;text-transform:uppercase" style-hover="background:#fff">Save credentials</span>
+</div>
+<p style="margin:0;font-size:12.5px;line-height:1.65;color:rgba(242,240,236,.45)">Credentials are stored in this browser as a salted PBKDF2 hash — never as plain text. Because this site has no server, this login hides the editor but cannot stop a determined visitor. See the note in chat about Cloudflare Access or Supabase for real protection.</p>
+</div>
+</sc-if>
+
+<sc-if value="{{ isMediaTab }}" hint-placeholder-val="{{ false }}">
+<div>
+<div style="display:flex;flex-wrap:wrap;gap:12px;align-items:baseline;justify-content:space-between;margin-bottom:14px">
+<span style="font-family:ui-monospace,Menlo,monospace;font-size:10.5px;letter-spacing:.22em;text-transform:uppercase;color:rgba(242,240,236,.45)">Website media slots &mdash; {{ slotSummary }}</span>
+</div>
+<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,230px),1fr));gap:14px;margin-bottom:30px">
+<sc-for list="{{ slotList }}" as="sl" hint-placeholder-count="8">
+<div style="border:1px solid {{ sl.border }};display:grid">
+<label style="position:relative;display:block;cursor:pointer;aspect-ratio:{{ sl.ratio }};background:repeating-linear-gradient(118deg,#1b1b1b 0 10px,#232323 10px 20px);overflow:hidden">
+{{ sl.thumbEl }}
+<span style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;text-align:center;padding:12px;background:{{ sl.scrim }}">
+<span style="font-family:ui-monospace,Menlo,monospace;font-size:9.5px;letter-spacing:.2em;text-transform:uppercase;color:{{ sl.tagColor }}">{{ sl.tag }}</span>
+<span style="font-size:11px;color:rgba(242,240,236,.55)">{{ sl.action }}</span>
+</span>
+<input type="file" accept="image/*" onChange="{{ sl.upload }}" style="display:none">
+</label>
+<div style="padding:10px 11px;display:grid;gap:8px">
+<div style="font-size:12.5px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ sl.label }}</div>
+<div style="font-family:ui-monospace,Menlo,monospace;font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:rgba(242,240,236,.38)">{{ sl.hint }}</div>
+<select value="{{ sl.value }}" onChange="{{ sl.onPick }}" style="width:100%;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);color:#f2f0ec;padding:7px 9px;font-size:12px">
+<sc-for list="{{ sl.options }}" as="o" hint-placeholder-count="2"><option value="{{ o.value }}">{{ o.label }}</option></sc-for>
+</select>
+</div>
+</div>
+</sc-for>
+</div>
+<label onDragOver="{{ onDragOver }}" onDrop="{{ onDrop }}" style="display:block;cursor:pointer;border:1px dashed {{ dropBorder }};padding:44px 20px;text-align:center;margin-bottom:20px;background:{{ dropBg }}">
+<div style="font-weight:500;font-size:15px">Drop images here &mdash; or click to choose files</div>
+<div style="font-family:ui-monospace,Menlo,monospace;font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:rgba(242,240,236,.42);margin-top:9px">jpg &middot; png &middot; webp &middot; svg &mdash; fills the empty slots above in order. Films use YouTube links.</div>
+<input type="file" multiple="{{ true }}" accept="image/*" onChange="{{ onPickFiles }}" style="display:none">
+</label>
+<div style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;margin-bottom:14px">
+<span style="font-family:ui-monospace,Menlo,monospace;font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;color:rgba(242,240,236,.45)">{{ mediaSummary }}</span>
+</div>
+<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,200px),1fr));gap:14px">
+<sc-for list="{{ mediaList }}" as="m" hint-placeholder-count="4">
+<div style="border:1px solid rgba(255,255,255,.09)">
+<div style="position:relative;aspect-ratio:4/3;background:repeating-linear-gradient(118deg,#1b1b1b 0 10px,#232323 10px 20px);overflow:hidden">
+{{ m.thumbEl }}
+<span style="position:absolute;left:8px;top:8px;font-family:ui-monospace,Menlo,monospace;font-size:9px;letter-spacing:.14em;text-transform:uppercase;background:rgba(10,10,10,.72);padding:3px 6px;color:rgba(242,240,236,.75)">{{ m.kind }}</span>
+</div>
+<div style="padding:10px 11px;display:grid;gap:8px">
+<div style="font-family:ui-monospace,Menlo,monospace;font-size:11px;color:rgba(242,240,236,.72);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ m.name }}</div>
+<div style="font-size:11px;color:rgba(242,240,236,.42)">{{ m.size }}</div>
+<input type="text" value="{{ m.alt }}" onChange="{{ m.setAlt }}" placeholder="alt text" style="width:100%;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);color:#f2f0ec;padding:7px 9px;font-size:12px">
+<span onClick="{{ m.remove }}" style="cursor:pointer;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:rgba(242,240,236,.45)" style-hover="color:#ff6b6b">Delete</span>
+</div>
+</div>
+</sc-for>
+</div>
+</div>
+</sc-if>
+</div>
+</main>
+</div>
+</sc-if>
+
+<sc-if value="{{ showSwitcher }}" hint-placeholder-val="{{ true }}">
+<div style="position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:200;display:flex;gap:4px;padding:5px;background:rgba(18,18,18,.92);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.12);border-radius:999px;box-shadow:0 10px 30px rgba(0,0,0,.5)">
+<sc-for list="{{ screens }}" as="s" hint-placeholder-count="3">
+<span onClick="{{ s.onClick }}" style="cursor:pointer;padding:8px 15px;border-radius:999px;font-family:ui-monospace,Menlo,monospace;font-size:10px;letter-spacing:.16em;text-transform:uppercase;background:{{ s.bg }};color:{{ s.fg }}">{{ s.label }}</span>
+</sc-for>
+</div>
+</sc-if>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1440}}">
+const STORE_KEY = 'insfire.site.v1';
+const DB_NAME = 'insfire-media';
+const AUTH_KEY = 'insfire.auth.v1';
+const SESSION_KEY = 'insfire.session.v1';
+const IDLE_MS = 30 * 60 * 1000;
+const LOCK_MS = 5 * 60 * 1000;
+const MAX_TRIES = 5;
+// Precomputed PBKDF2 output for the first-run password, so the password string
+// itself never appears in the shipped source.
+const SEED_SALT = '9327261ffda5ea9eb18eecd4af86fcff';
+const SEED_HASH = '50252080458443bd54e71615f5def56ddc948a8bc36be27a9b5816dcc240e70d';
+
+// PBKDF2-SHA256, 150k iterations, random 16-byte salt. Only the salt and the
+// derived hash are stored; the password itself is never written anywhere.
+async function hashPassword(password, saltHex) {
+  const enc = new TextEncoder();
+  const salt = saltHex
+    ? Uint8Array.from(saltHex.match(/.{2}/g).map(b => parseInt(b, 16)))
+    : crypto.getRandomValues(new Uint8Array(16));
+  const key = await crypto.subtle.importKey('raw', enc.encode(password), 'PBKDF2', false, ['deriveBits']);
+  const bits = await crypto.subtle.deriveBits({ name: 'PBKDF2', salt: salt, iterations: 150000, hash: 'SHA-256' }, key, 256);
+  const hex = (arr) => Array.from(arr).map(b => b.toString(16).padStart(2, '0')).join('');
+  return { salt: hex(salt), hash: hex(new Uint8Array(bits)) };
+}
+
+// ============================================================
+//  YOUR VIDEOS — edit these lists. One line per film.
+//  Any YouTube link format works: watch?v=, youtu.be/, /shorts/,
+//  /embed/, plus extra parameters (&t=30s, ?si=...).
+//  Links can also be edited later in CMS → Content → Showcase.
+// ============================================================
+const CORPORATE_VIDEOS = [
+  { title: 'The People Who Keep The Lights On', url: '', description: 'A night shift at a state utility, told through the hands that keep it running.', client: 'Sabah Energy Group', year: '2026', location: 'Sandakan' },
+  { title: 'Twelve Years, One Classroom', url: '', description: 'A documentary on a rural education programme and the teacher who stayed.', client: 'Yayasan Sabah', year: '2025', location: 'Sandakan' },
+  { title: 'Built On Water', url: '', description: 'How a port operator rebuilt its relationship with the coastal community.', client: 'KK Port Authority', year: '2025', location: 'Kota Kinabalu' },
+  { title: 'The First Harvest', url: '', description: 'A campaign film following a smallholder cooperative through its first export season.', client: 'Sawit Group', year: '2025', location: 'Tawau' },
+  { title: 'Everyone Here Has A Name', url: '', description: 'An internal culture film made for a 1,400-person workforce.', client: 'Borneo Health', year: '2026', location: 'Kota Kinabalu' },
+  { title: 'Quiet Engineering', url: '', description: 'A leadership story about the engineer behind a decade of quiet infrastructure.', client: 'Sabah Works', year: '2024', location: 'Keningau' },
+  { title: 'Annual Report, Unwritten', url: '', description: 'Turning a financial year into six minutes people actually watched.', client: 'ABC Holdings', year: '2026', location: 'Kota Kinabalu' },
+  { title: 'The Long Road North', url: '', description: 'A brand documentary on logistics through the interior.', client: 'Borneo Freight', year: '2024', location: 'Ranau' },
+  { title: 'Opening Night', url: '', description: 'Event film for a flagship corporate launch.', client: 'KK Waterfront', year: '2026', location: 'Kota Kinabalu' },
+  { title: 'What We Owe The Reef', url: '', description: 'A sustainability film for a tourism group.', client: 'Sipadan Collective', year: '2025', location: 'Semporna' }
+];
+
+const WEDDING_VIDEOS = [
+  { title: 'Aina & Haziq', url: '', description: 'A highlight film shot between two family homes in one morning.', client: 'Aina & Haziq', year: '2026', location: 'Tuaran' },
+  { title: 'John & Sarah', url: '', description: 'A garden ceremony, filmed almost entirely in natural light.', client: 'John & Sarah', year: '2026', location: 'Kota Kinabalu' },
+  { title: 'Mei Lin & Andrew', url: '', description: 'Two cultures, one afternoon, and a great deal of rain.', client: 'Mei Lin & Andrew', year: '2025', location: 'Kota Kinabalu' },
+  { title: 'Farah & Idris', url: '', description: 'A traditional ceremony told through the women who prepared it.', client: 'Farah & Idris', year: '2025', location: 'Papar' },
+  { title: 'Grace & Daniel', url: '', description: 'A small chapel wedding with thirty guests and no schedule.', client: 'Grace & Daniel', year: '2026', location: 'Kundasang' },
+  { title: 'Nurul & Zaki', url: '', description: 'A two-day celebration condensed into five minutes.', client: 'Nurul & Zaki', year: '2024', location: 'Tawau' },
+  { title: 'Cheryl & Marcus', url: '', description: 'Beachside vows at the end of a long monsoon week.', client: 'Cheryl & Marcus', year: '2025', location: 'Semporna' },
+  { title: 'Siti & Hafiz', url: '', description: 'A film for a couple who asked us to stay invisible.', client: 'Siti & Hafiz', year: '2024', location: 'Beaufort' },
+  { title: 'Yvonne & Ken', url: '', description: 'The first dance, the speeches, and everything nobody planned.', client: 'Yvonne & Ken', year: '2026', location: 'Kota Kinabalu' },
+  { title: 'Hana & Rafiq', url: '', description: 'A full-day feature with both families filmed in parallel.', client: 'Hana & Rafiq', year: '2025', location: 'Ranau' }
+];
+
+// Pulls the 11-character video id out of any common YouTube URL. Returns null
+// (and warns in the console) for anything unreadable, so one bad link can never
+// break the page.
+function youtubeId(url) {
+  const raw = String(url || '').trim();
+  if (!raw) return null;
+  if (/^[\w-]{11}$/.test(raw)) return raw;
+  const patterns = [
+    /(?:youtube\.com|youtube-nocookie\.com)\/watch\?(?:[^#]*&)?v=([\w-]{11})/i,
+    /youtu\.be\/([\w-]{11})/i,
+    /(?:youtube\.com|youtube-nocookie\.com)\/shorts\/([\w-]{11})/i,
+    /(?:youtube\.com|youtube-nocookie\.com)\/embed\/([\w-]{11})/i,
+    /(?:youtube\.com|youtube-nocookie\.com)\/live\/([\w-]{11})/i,
+    /(?:youtube\.com|youtube-nocookie\.com)\/v\/([\w-]{11})/i
+  ];
+  for (let i = 0; i < patterns.length; i++) {
+    const hit = raw.match(patterns[i]);
+    if (hit) return hit[1];
+  }
+  console.warn('[Insfire] Skipping video — not a YouTube link I can read: "' + raw + '". Expected something like https://www.youtube.com/watch?v=XXXXXXXXXXX');
+  return null;
+}
+
+function films(list) {
+  return list.map(v => ({
+    title: v.title, url: v.url || '', description: v.description || '',
+    client: v.client || '', year: v.year || '', location: v.location || '',
+    featured: false, published: true
+  }));
+}
+function groups(names) {
+  return names.map(n => ({ title: n[0], description: n[1], gallery: [], published: true }));
+}
+
+function defaults() {
+  return {
+    brand: { name: 'INSFIRE', accent: '#FF5A1F', ink: '#0a0a0a', paper: '#f3f1ed',
+      logoId: '', logoLightId: '', logoDarkId: '', faviconId: '', logoAlt: 'Insfire Studio', logoSize: 'medium' },
+    type: { headingFont: 'Poppins', bodyFont: 'Poppins', headingScale: 1, letterSpacing: -32, bodySize: 16 },
+    layout: { container: 1560, sectionSpacing: 1, radius: 0, showNumbers: true },
+    nav: { sticky: true, adaptive: true, items: [
+      { label: 'Work', href: '#work' }, { label: 'Services', href: '#services' },
+      { label: 'Showcase', href: '#showcase' },
+      { label: 'About', href: '#about' }, { label: 'Contact', href: '#contact' }
+    ], ctaLabel: 'Start a project', ctaHref: 'https://wa.me/60123164569' },
+    anim: { mode: 'cinematic', distance: 28, duration: 950 },
+    hero: {
+      eyebrow: 'Creative storytelling studio · Kota Kinabalu',
+      line1: 'IGNITE', line2: 'WHAT MATTERS',
+      sub: 'We turn ideas, people and purpose into stories people remember.',
+      cat1: 'Corporate Storytelling', cat2: 'Film · Photography · Creative',
+      cta1: 'Start a project', cta1href: 'https://wa.me/60123164569',
+      cta2: 'View our work', cta2href: '#work',
+      mediaId: '', youtubeUrl: '', overlay: 55
+    },
+    problem: {
+      h1: 'YOUR BUSINESS HAS A STORY.', h2: 'BUT IS ANYONE LISTENING?',
+      intro: 'Great organisations often struggle to communicate what makes them different.',
+      b1: 'Your vision becomes a presentation.', b2: 'Your achievements become a report.', b3: 'Your people become statistics.',
+      outro: 'We believe there\u2019s a better way.',
+      k1: 'MAKE PEOPLE SEE IT.', k2: 'FEEL IT.', k3: 'REMEMBER IT.'
+    },
+    servicesTitle: 'HOW INSFIRE HELPS.',
+    servicesIntro: 'Three ways of working. One purpose \u2014 making what matters impossible to ignore.',
+    services: [
+      { title: 'STORY', items: 'Corporate Films\nDocumentaries\nBrand Stories\nLeadership Stories\nCampaign Films' },
+      { title: 'VISUAL', items: 'Corporate Photography\nBrand Photography\nCorporate Portraits\nEvent Photography\nCampaign Content' },
+      { title: 'EXPERIENCE', items: 'Digital Experiences\nInteractive Storytelling\nAI-powered Creative Solutions\nWeb Experiences' }
+    ],
+    workTitle: 'STORIES WE\u2019VE TOLD',
+    projects: [
+      { title: 'The People Who Keep The Lights On', client: 'Sabah Energy Group', category: 'Corporate Film', year: '2026', location: 'Kota Kinabalu', mediaId: '', featured: true, visible: true },
+      { title: 'Faces of Frontline Care', client: 'Borneo Health', category: 'Photography', year: '2026', location: 'Kota Kinabalu', mediaId: '', featured: false, visible: true },
+      { title: 'A City That Remembers The Sea', client: 'KK Waterfront', category: 'Brand Story', year: '2025', location: 'Kota Kinabalu', mediaId: '', featured: false, visible: true },
+      { title: 'Twelve Years, One Classroom', client: 'Yayasan Sabah', category: 'Documentary', year: '2025', location: 'Sandakan', mediaId: '', featured: false, visible: true }
+    ],
+    about: { l1: 'WE BELIEVE', l2: 'EVERY STORY', l3: 'HAS A', l4: 'SPARK.',
+      serif: 'Insfire began with a simple belief: visual storytelling can move people to care, act and remember.',
+      body: 'Today we work with organisations to turn ideas, people and purpose into meaningful visual experiences \u2014 starting with the message, not the camera.',
+      stats: [ { value: '9', suffix: 'y', label: 'Telling stories' }, { value: '120', suffix: '+', label: 'Films delivered' }, { value: '5', suffix: '', label: 'People in the studio' } ] },
+    teamTitle: 'BEHIND THE FIRE.',
+    teamIntro: 'The people who would rather get the message right than get the shot fast.',
+    team: [ { name: 'Aiman R.', role: 'Founder / Director', mediaId: '' }, { name: 'Nadia L.', role: 'Story Strategist', mediaId: '' }, { name: 'Jeff T.', role: 'DOP', mediaId: '' } ],
+    whyusTitle: 'WHY INSFIRE.',
+    pillars: [
+      { title: 'STORY FIRST', body: 'We don\u2019t begin with cameras. We begin with the message.' },
+      { title: 'STRATEGY + CRAFT', body: 'Creative ideas are only valuable when they solve a communication problem.' },
+      { title: 'HUMAN', body: 'Technology changes. People still connect with people.' },
+      { title: 'BUILT FOR IMPACT', body: 'Beautiful isn\u2019t enough. The work needs to matter.' }
+    ],
+    insightsTitle: 'INSIGHTS.',
+    insights: [
+      { category: 'Strategy', title: 'Why most corporate videos fail before the first shot', date: 'Aug 2026', href: '#insights' },
+      { category: 'Future', title: 'AI can generate footage. It still can\u2019t find the truth.', date: 'Jul 2026', href: '#insights' }
+    ],
+    sections: [
+      { key: 'why', label: 'Why it matters', on: true },
+      { key: 'services', label: 'How Insfire helps', on: true },
+      { key: 'work', label: 'Stories we\u2019ve told', on: true },
+      { key: 'about', label: 'About Insfire', on: true },
+      { key: 'team', label: 'Behind the fire', on: false },
+      { key: 'whyus', label: 'Why Insfire', on: true },
+      { key: 'insights', label: 'Insights', on: false }
+    ],
+    showcaseLanding: { title: 'SHOWCASE', sub: 'A collection of stories, people and moments we’ve brought to life.' },
+    showcaseCategories: [
+      { key: 'corporate', label: 'CORPORATE', blurb: 'Stories that move organisations forward.', cardLabel: 'View corporate', cardMediaId: '',
+        heroTitle: 'CORPORATE', heroSub: 'Stories that move organisations forward.', heroMediaId: '',
+        intro: 'We work with organisations that have something real to say — and help them say it so people remember it.',
+        videoTitle: 'FILM', videoDesc: 'Corporate films, documentaries and campaign work.',
+        photoTitle: 'PHOTOGRAPHY', photoDesc: 'Five bodies of work, shot on location across Sabah.',
+        ctaTitle: 'HAVE SOMETHING WORTH IGNITING?', ctaButton: 'Start a project', ctaHref: 'https://wa.me/60123164569',
+        showIntro: true, showVideo: true, showPhoto: true,
+        films: films(CORPORATE_VIDEOS),
+        photoGroups: groups([
+          ['LEADERSHIP PORTRAITS', 'Boardroom and on-site portraits made without the usual stiffness.'],
+          ['EVENTS & CONFERENCES', 'Annual dinners, launches and industry gatherings.'],
+          ['ON LOCATION', 'Operations photographed where the work actually happens.'],
+          ['TEAM & CULTURE', 'The everyday of an organisation, unposed.'],
+          ['CAMPAIGN STILLS', 'Key visuals produced alongside film work.']
+        ]) },
+      { key: 'wedding', label: 'WEDDING', blurb: 'Stories that celebrate two people becoming one.', cardLabel: 'View wedding', cardMediaId: '',
+        heroTitle: 'WEDDING', heroSub: 'Stories of love, connection and moments worth remembering.', heroMediaId: '',
+        intro: 'A wedding happens once. We film and photograph it the way you will want to remember it — quietly, closely, honestly.',
+        videoTitle: 'WEDDING FILMS', videoDesc: 'Highlight films and full ceremony features.',
+        photoTitle: 'WEDDING PHOTOGRAPHY', photoDesc: 'Five chapters of a single day, from first light to last dance.',
+        ctaTitle: 'YOUR STORY DESERVES TO BE REMEMBERED.', ctaButton: 'Start a conversation', ctaHref: 'https://wa.me/60123164569',
+        showIntro: true, showVideo: true, showPhoto: true,
+        films: films(WEDDING_VIDEOS),
+        photoGroups: groups([
+          ['GETTING READY', 'The hours before, when the day still belongs to family.'],
+          ['THE CEREMONY', 'Vows, tears and the people watching them.'],
+          ['PORTRAITS', 'Twenty quiet minutes away from the crowd.'],
+          ['CELEBRATION', 'Dinner, speeches and the dancing that follows.'],
+          ['THE DETAILS', 'Rings, flowers, letters — the things kept afterwards.']
+        ]) }
+    ],
+    cta: { l1: 'HAVE SOMETHING', l2: 'WORTH', l3: 'IGNITING?', sub: 'Tell us what you\u2019re trying to communicate.',
+      label: 'Start a conversation', href: 'https://wa.me/60123164569', location: 'Kota Kinabalu · Sabah · Malaysia' },
+    footer: { tagline: 'Ignite What Matters.', email: 'theinsfire@gmail.com', location: 'Kota Kinabalu · Sabah · Malaysia',
+      copyright: '© Insfire Studio', note: 'Ignite what matters',
+      nav: [ { label: 'Work', href: '#work' }, { label: 'Services', href: '#services' },
+      { label: 'Showcase', href: '#showcase' },
+      { label: 'About', href: '#about' }, { label: 'Contact', href: '#contact' } ],
+      socials: [ { label: 'Instagram', url: 'https://www.instagram.com/insfirestudio/' }, { label: 'Facebook', url: 'https://www.facebook.com/share/175BA15PGt/' } ] },
+    seo: { title: 'Insfire Studio — Ignite What Matters', description: 'Insfire Studio is a creative storytelling partner in Kota Kinabalu, helping organisations communicate vision, people and purpose through film, photography and digital experiences.', ogMediaId: '', canonical: 'https://insfire.org/', robots: 'index, follow',
+      siteName: 'Insfire Studio', twitterCard: 'summary_large_image', ogType: 'website' },
+    business: {
+      legalName: 'Insfire Studio', type: 'ProfessionalService',
+      street: '', city: 'Kota Kinabalu', region: 'Sabah', postcode: '', country: 'MY',
+      phone: '+60 12-316 4569', whatsapp: 'https://wa.me/60123164569', email: 'theinsfire@gmail.com',
+      hours: '', priceRange: '', founded: '',
+      lat: '', lng: '', mapUrl: ''
+    },
+    analytics: { ga4: '', gscVerification: '' },
+    pageSeo: [
+      { key: 'home', label: 'Homepage', slug: '/', title: 'Insfire Studio — Corporate Storytelling in Kota Kinabalu', description: 'Corporate films, photography and brand storytelling for organisations in Kota Kinabalu, Sabah. We start with the message, not the camera.', ogMediaId: '', index: true, follow: true },
+      { key: 'showcase', label: 'Showcase landing', slug: '/showcase', title: 'Showcase — Corporate & Wedding Work | Insfire Studio', description: 'Selected films and photography from corporate and wedding work across Sabah.', ogMediaId: '', index: true, follow: true },
+      { key: 'corporate', label: 'Corporate showcase', slug: '/showcase/corporate', title: 'Corporate Video & Photography, Kota Kinabalu | Insfire', description: 'Corporate films, documentaries and photography for organisations in Kota Kinabalu and across Sabah.', ogMediaId: '', index: true, follow: true },
+      { key: 'wedding', label: 'Wedding showcase', slug: '/showcase/wedding', title: 'Wedding Videographer & Photographer, Kota Kinabalu | Insfire', description: 'Wedding films and photography in Kota Kinabalu and across Sabah — quiet, close and honest.', ogMediaId: '', index: true, follow: true },
+      { key: 'contact', label: 'Contact', slug: '/contact', title: 'Start a Project — Insfire Studio, Kota Kinabalu', description: 'Tell us what you are trying to communicate. Based in Kota Kinabalu, Sabah, working across Malaysia.', ogMediaId: '', index: true, follow: true }
+    ]
+  };
+}
+
+const FONTS = ['Poppins', 'Space Grotesk', 'DM Sans', 'Archivo', 'Instrument Serif', 'Playfair Display', 'Georgia', 'system-ui'];
+
+class Component extends DCLogic {
+  state = { screen: 'home', tab: 'Projects', store: defaults(), media: [], dragging: false, saved: 'Loaded', scCat: 'corporate', cmsCat: 0, lightbox: null, narrow: (typeof window !== 'undefined' && window.innerWidth < 640),
+    authed: false, loginOpen: false, loginUser: '', loginPass: '', showPass: false, loginError: '', tries: 0, lockedUntil: 0, mustChange: false,
+    acct: { user: '', cur: '', next: '', confirm: '', msg: '', err: '' }, navLight: false,
+    // Mobile header: `mobile` mirrors the 880px breakpoint the header CTA already
+    // hides at; `mobileNav` is the overlay's open state. `ytReady` defers the hero
+    // background iframe until after first paint so it can never be the LCP element.
+    mobile: (typeof window !== 'undefined' && window.innerWidth <= 880), mobileNav: false, ytReady: false,
+    // Public site content from Supabase. `pubStore` stays null until the
+    // `published` row resolves; null after `pubLoading` clears means the fetch
+    // failed or was unconfigured, and the bundled defaults render instead.
+    pubStore: null, pubLoading: true,
+    // Supabase admin auth. sbMode = real credentials are configured, so the
+    // magic-link flow replaces the prototype's local password entirely.
+    sbMode: false, sbSession: null, sbEmail: '', sbSent: false, sbBusy: false, sbErr: '',
+    sbSaveState: 'idle', sbSaveErr: '', publishBusy: false, toast: '' };
+
+  // ---------- Supabase admin auth ----------
+  // The editor is only ever reachable with a live Supabase session once Supabase
+  // is configured. Without config we fall back to the prototype's local auth so
+  // the design reference stays reviewable offline.
+  adminUnlocked() { return this.state.sbMode ? !!this.state.sbSession : this.state.authed; }
+
+  async initSupabaseAuth() {
+    const sb = await (typeof window !== 'undefined' ? window.__INSFIRE_SB : null);
+    if (!sb) return;
+    this._sb = sb;
+    this.setState({ sbMode: true, sbEmail: (window.__INSFIRE_ADMIN_EMAIL || '') });
+    const { data } = await sb.auth.getSession();
+    this.applySession(data && data.session);
+    // Covers sign-in, sign-out, token refresh and expiry in one place.
+    sb.auth.onAuthStateChange((_evt, session) => this.applySession(session));
+    // Belt and braces: a revoked session that never fires an event still gets
+    // caught here and drops the editor back to the login screen.
+    this._sbPoll = setInterval(async () => {
+      if (!this.state.sbSession) return;
+      const { data: d2 } = await sb.auth.getSession();
+      if (!d2 || !d2.session) this.applySession(null);
+    }, 60000);
+  }
+
+  applySession(session) {
+    // Client-side mirror of the RLS rule: a valid session for any other address
+    // must not open the editor. RLS is still the real enforcement.
+    const allowed = (window.__INSFIRE_ADMIN_EMAIL || '').toLowerCase();
+    if (session && allowed && String((session.user && session.user.email) || '').toLowerCase() !== allowed) {
+      this.setState({ sbErr: 'That address is not an administrator for this site.', sbSent: false });
+      if (this._sb) this._sb.auth.signOut();
+      return;
+    }
+    const had = !!this.state.sbSession;
+    this.setState({ sbSession: session || null, sbErr: '' });
+    if (session && !had) {
+      // Strip the magic-link tokens out of the address bar, keep #admin.
+      if (location.hash && /access_token|code=/.test(location.hash + location.search)) {
+        history.replaceState(null, '', location.pathname + '#admin');
+      }
+      this.setState({ screen: 'cms', sbSent: false });
+      this.loadDraft();
+    } else if (!session && had) {
+      this.setState({ screen: 'home', sbSaveState: 'idle' });
+    }
+  }
+
+  sendMagicLink = async (e) => {
+    if (e && e.preventDefault) e.preventDefault();
+    const email = String(this.state.sbEmail || '').trim();
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return this.setState({ sbErr: 'Enter a valid email address.' });
+    this.setState({ sbBusy: true, sbErr: '' });
+    const { error } = await this._sb.auth.signInWithOtp({
+      email,
+      // shouldCreateUser:false — without it signInWithOtp would create an account
+      // for ANY address that gets typed here and hand it a valid session.
+      options: { shouldCreateUser: false, emailRedirectTo: location.origin + location.pathname + '#admin' }
+    });
+    if (error) this.setState({ sbBusy: false, sbErr: error.message });
+    else this.setState({ sbBusy: false, sbSent: true });
+  };
+
+  sbLogout = async () => {
+    if (this._sb) await this._sb.auth.signOut();
+    if (location.hash) history.replaceState(null, '', location.pathname + location.search);
+    this.setState({ sbSession: null, screen: 'home', sbSent: false });
+  };
+
+  // ---------- draft read / write ----------
+  async loadDraft() {
+    if (!this._sb) return;
+    const { data, error } = await this._sb.from('content').select('json').eq('id', 'draft').single();
+    if (error) { this.setState({ sbSaveState: 'error', sbSaveErr: 'Could not load draft: ' + error.message }); return; }
+    if (!data || !data.json) { this.setState({ saved: 'Draft row is empty — editing defaults' }); return; }
+    const json = typeof data.json === 'string' ? JSON.parse(data.json) : data.json;
+    this.setState({ store: this.migrate(this.merge(defaults(), json)), saved: 'Loaded draft from Supabase' });
+  }
+
+  // Debounced ~400ms per field, same cadence as the local prototype.
+  queueDraftSave() {
+    if (!this.state.sbMode || !this.state.sbSession) return;
+    clearTimeout(this._draftTimer);
+    this.setState({ sbSaveState: 'saving', sbSaveErr: '' });
+    this._draftTimer = setTimeout(() => this.writeDraft(), 400);
+  }
+
+  async writeDraft() {
+    if (!this._sb || !this.state.sbSession) return;
+    const local = this.state.store;
+    try {
+      // Read-merge-write: whatever else is in the row survives, so a field edit
+      // never clobbers keys this client has not seen.
+      const { data: row, error: readErr } = await this._sb.from('content').select('json').eq('id', 'draft').single();
+      if (readErr && readErr.code !== 'PGRST116') throw readErr;
+      const base = row && row.json ? (typeof row.json === 'string' ? JSON.parse(row.json) : row.json) : {};
+      const merged = this.merge(base, local);
+      const { error } = await this._sb.from('content')
+        .update({ json: merged, updated_at: new Date().toISOString() })
+        .eq('id', 'draft');
+      if (error) throw error;
+      this.setState({ sbSaveState: 'saved', sbSaveErr: '' });
+    } catch (err) {
+      this.setState({ sbSaveState: 'error', sbSaveErr: this.rlsHint(err) });
+    }
+  }
+
+  // Turns Postgres/PostgREST codes into something the owner can act on.
+  rlsHint(err) {
+    const msg = (err && (err.message || err.hint)) || 'Unknown error';
+    const code = err && err.code;
+    if (code === '42501' || /row-level security|permission denied/i.test(msg)) {
+      return 'Blocked by Row Level Security — the signed-in email is not allowed to write this row.';
+    }
+    if (code === 'PGRST116') return 'No matching row — create the draft/published rows in the content table.';
+    return msg;
+  }
+
+  publishDraft = async () => {
+    if (!this._sb || !this.state.sbSession) return;
+    if (!window.confirm('Publish the current draft to the live site?')) return;
+    this.setState({ publishBusy: true, toast: '' });
+    try {
+      clearTimeout(this._draftTimer);
+      await this.writeDraft();
+      const { data: draft, error: dErr } = await this._sb.from('content').select('json, version').eq('id', 'draft').single();
+      if (dErr) throw dErr;
+      const { data: pub } = await this._sb.from('content').select('version').eq('id', 'published').single();
+      const nextVersion = Math.max(Number((pub && pub.version) || 0), Number(draft.version || 0)) + 1;
+      const { error: pErr } = await this._sb.from('content')
+        .update({ json: draft.json, version: nextVersion, updated_at: new Date().toISOString() })
+        .eq('id', 'published');
+      if (pErr) throw pErr;
+      this.setState({ publishBusy: false, toast: 'Published — live site now shows version ' + nextVersion });
+      this._toastTimer = setTimeout(() => this.setState({ toast: '' }), 6000);
+    } catch (err) {
+      this.setState({ publishBusy: false, toast: 'Publish failed — ' + this.rlsHint(err) });
+      this._toastTimer = setTimeout(() => this.setState({ toast: '' }), 9000);
+    }
+  };
+
+  // The store the PUBLIC views render from: Supabase `published` row when we have
+  // it, bundled defaults otherwise. The CMS deliberately never calls this — it
+  // stays on localStorage until authenticated writes exist.
+  publicStore() { return this.state.pubStore || this.state.store; }
+  activeStore() { return this.state.screen === 'cms' ? this.state.store : this.publicStore(); }
+
+  loadPublished() {
+    const p = (typeof window !== 'undefined' && window.__INSFIRE_PUBLISHED) || Promise.resolve(null);
+    // Never let a hanging request hold the page behind the cover.
+    this._pubTimer = setTimeout(() => { if (this.state.pubLoading) this.setState({ pubLoading: false }); }, 3000);
+    Promise.resolve(p).then(json => {
+      clearTimeout(this._pubTimer);
+      const next = { pubLoading: false };
+      if (json && typeof json === 'object') next.pubStore = this.migrate(this.merge(defaults(), json));
+      this.setState(next);
+      setTimeout(() => { this.applyTheme(); this.applySeo(); this.observe(); }, 0);
+    }).catch(() => { clearTimeout(this._pubTimer); this.setState({ pubLoading: false }); });
+  }
+
+  setMobileNav(open) {
+    if (typeof document !== 'undefined') document.body.style.overflow = open ? 'hidden' : '';
+    this.setState({ mobileNav: !!open });
+  }
+
+  // ---------- persistence ----------
+  // Saved content overrides array defaults wholesale, so new nav entries must be
+  // migrated in rather than inherited from defaults().
+  migrate(store) {
+    const has = (arr) => (arr || []).some(n => n && n.href === '#showcase');
+    const insert = (arr) => {
+      const a = (arr || []).slice();
+      const at = a.findIndex(n => n && n.href === '#services');
+      a.splice(at < 0 ? a.length : at + 1, 0, { label: 'Showcase', href: '#showcase' });
+      return a;
+    };
+    if (store.nav && !has(store.nav.items)) store.nav.items = insert(store.nav.items);
+    if (store.footer && !has(store.footer.nav)) store.footer.nav = insert(store.footer.nav);
+    if (store.showcaseCategories) {
+      const seed = defaults().showcaseCategories;
+      store.showcaseCategories.forEach(c => {
+        const s = seed.find(x => x.key === c.key);
+        if (!c.films) c.films = s ? s.films : [];
+        if (!c.photoGroups) c.photoGroups = s ? s.photoGroups : [];
+      });
+    }
+    delete store.showcaseItems;
+    // Case-study pages were removed: drop their leftover fields and SEO record.
+    if (Array.isArray(store.projects)) store.projects.forEach(p => { delete p.challenge; delete p.idea; delete p.execution; delete p.result; });
+    if (Array.isArray(store.pageSeo)) store.pageSeo = store.pageSeo.filter(p => p.key !== 'work');
+    // Films are YouTube embeds now: drop the old uploaded-video fields, keep a url.
+    if (Array.isArray(store.showcaseCategories)) {
+      store.showcaseCategories.forEach(c => {
+        (c.films || []).forEach(f => {
+          if (f.url === undefined) f.url = '';
+          delete f.mediaId; delete f.posterId; delete f.uploads;
+        });
+      });
+    }
+    if (store.hero && store.hero.youtubeUrl === undefined) store.hero.youtubeUrl = '';
+    if (!store.business) store.business = defaults().business;
+    if (!store.analytics) store.analytics = defaults().analytics;
+    if (!store.pageSeo || !store.pageSeo.length) store.pageSeo = defaults().pageSeo;
+    if (store.brand && store.brand.logoId === undefined) {
+      Object.assign(store.brand, { logoId: '', logoLightId: '', logoDarkId: '', faviconId: '', logoAlt: 'Insfire Studio', logoSize: 'medium' });
+    }
+    return store;
+  }
+
+  componentDidMount() {
+    // Public site: Supabase `published` row. CMS: localStorage, untouched below.
+    this.loadPublished();
+    try {
+      const raw = localStorage.getItem(STORE_KEY);
+      if (raw) {
+        const merged = this.migrate(this.merge(defaults(), JSON.parse(raw)));
+        this.setState({ store: merged, saved: 'Loaded saved content' });
+        try { localStorage.setItem(STORE_KEY, JSON.stringify(merged)); } catch (e) { /* non-fatal */ }
+      }
+    } catch (e) { /* ignore corrupt store */ }
+    this.loadMedia();
+    this.applyTheme();
+    this.applyFavicon();
+    this.applySeo();
+    this.applyAnalytics();
+    this.observe();
+    this._lastScreen = this.state.screen;
+    this._onKey = (e) => {
+      if (e.key !== 'Escape') return;
+      if (this.state.lightbox) this.setState({ lightbox: null });
+      else if (this.state.mobileNav) this.setMobileNav(false);
+    };
+    // Hero background film attaches one frame after load: the visible hero text
+    // and gradient paint first, the iframe never competes for LCP.
+    const armYt = () => requestAnimationFrame(() => setTimeout(() => this.setState({ ytReady: true }), 250));
+    if (document.readyState === 'complete') armYt();
+    else window.addEventListener('load', armYt, { once: true });
+    window.addEventListener('keydown', this._onKey);
+    // Span-based photo series need a FIXED track count, so the breakpoint has to
+    // come from logic — the template can't hold a media query.
+    this._onResize = () => {
+      const n = window.innerWidth < 640;
+      if (n !== this.state.narrow) this.setState({ narrow: n });
+      const mob = window.innerWidth <= 880;
+      if (mob !== this.state.mobile) {
+        this.setState({ mobile: mob });
+        // Resizing up past the breakpoint must not leave the overlay (or the
+        // scroll lock) stranded on a desktop layout.
+        if (!mob && this.state.mobileNav) this.setMobileNav(false);
+      }
+      if (this._navCta) this._navCta.style.display = window.innerWidth > 880 ? 'inline-flex' : 'none';
+    };
+    window.addEventListener('resize', this._onResize);
+    this.initAuth();
+    this.initSupabaseAuth();
+    this._onHash = () => {
+      if (!/^#admin$/i.test(location.hash)) return;
+      // Supabase mode: /admin routes to the CMS screen, which renders the
+      // magic-link login until a session exists — the editor never shows first.
+      if (this.state.sbMode) { if (!this.state.sbSession) this.setState({ screen: 'cms' }); return; }
+      if (!this.state.authed) this.setState({ loginOpen: true, loginError: '' });
+    };
+    window.addEventListener('hashchange', this._onHash);
+    this._onHash();
+    ['click', 'keydown', 'scroll', 'touchstart'].forEach(ev => window.addEventListener(ev, this.touchSession, { passive: true }));
+    this._idleTimer = setInterval(() => {
+      if (!this.state.authed) return;
+      const t = parseInt(sessionStorage.getItem(SESSION_KEY) || '0', 10);
+      if (!t || Date.now() - t > IDLE_MS) this.logout('Session expired after 30 minutes of inactivity.');
+    }, 30000);
+  }
+  // Screen changes swap the whole tree, so previous stamps must be cleared for
+  // the new screen's nodes to animate.
+  resetReveals() {
+    Array.from(document.querySelectorAll('[data-reveal]')).forEach(el => { delete el.dataset.revealed; delete el.dataset.io; });
+  }
+  // Track the previous screen on the instance: this runtime's lifecycle args
+  // are not a reliable previous-state snapshot in either direction.
+  componentDidUpdate() {
+    this.applyTheme();
+    this.applyFavicon();
+    this.applySeo();
+    this.applyAnalytics();
+    if (this._lastScreen !== this.state.screen) {
+      this._lastScreen = this.state.screen;
+      // 'auto', not smooth: document height changes hugely between screens and
+      // an animated jump gets clamped to the old offset mid-relayout.
+      window.scrollTo({ top: 0, behavior: 'auto' });
+      this.resetReveals();
+    }
+    this.observe();
+  }
+  merge(base, over) {
+    if (Array.isArray(base)) return Array.isArray(over) ? over : base;
+    if (base && typeof base === 'object') {
+      const out = Object.assign({}, base);
+      Object.keys(over || {}).forEach(k => { out[k] = (k in base) ? this.merge(base[k], over[k]) : over[k]; });
+      return out;
+    }
+    return over === undefined ? base : over;
+  }
+  save(store) {
+    this.setState({ store, saved: 'Saved just now' });
+    try { localStorage.setItem(STORE_KEY, JSON.stringify(store)); } catch (e) { this.setState({ saved: 'Save failed — storage full' }); }
+    // Supabase draft write, debounced. localStorage stays as the local mirror.
+    this.queueDraftSave();
+  }
+  set(path, value) {
+    const store = JSON.parse(JSON.stringify(this.state.store));
+    const parts = path.split('.');
+    let node = store;
+    for (let i = 0; i < parts.length - 1; i++) node = node[parts[i]];
+    node[parts[parts.length - 1]] = value;
+    this.save(store);
+  }
+  get(path) {
+    return path.split('.').reduce((o, k) => (o == null ? o : o[k]), this.state.store);
+  }
+
+  // ---------- media (IndexedDB) ----------
+  db() {
+    if (this._dbp) return this._dbp;
+    this._dbp = new Promise((res, rej) => {
+      const r = indexedDB.open(DB_NAME, 1);
+      r.onupgradeneeded = () => { if (!r.result.objectStoreNames.contains('files')) r.result.createObjectStore('files', { keyPath: 'id' }); };
+      r.onsuccess = () => res(r.result);
+      r.onerror = () => rej(r.error);
+    });
+    return this._dbp;
+  }
+  async loadMedia() {
+    try {
+      const db = await this.db();
+      const items = await new Promise((res, rej) => {
+        const tx = db.transaction('files', 'readonly').objectStore('files').getAll();
+        tx.onsuccess = () => res(tx.result || []); tx.onerror = () => rej(tx.error);
+      });
+      const media = items.map(it => ({ id: it.id, name: it.name, type: it.type, size: it.size, alt: it.alt || '', url: URL.createObjectURL(it.blob) }));
+      this.setState({ media });
+    } catch (e) { /* IndexedDB unavailable */ }
+  }
+  // assignTo: a store path to fill with the first upload. When omitted, new
+  // uploads flow into whichever website slots are still empty, in order.
+  async addFiles(fileList, assignTo, appendTo) {
+    const files = Array.from(fileList || []);
+    if (!files.length) return;
+    const db = await this.db();
+    const ids = [];
+    for (const f of files) {
+      const id = 'm' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+      ids.push(id);
+      const rec = { id, name: f.name, type: f.type, size: f.size, alt: '', blob: f };
+      await new Promise((res, rej) => { const r = db.transaction('files', 'readwrite').objectStore('files').put(rec); r.onsuccess = res; r.onerror = () => rej(r.error); });
+    }
+    let note = files.length + ' file(s) uploaded';
+    if (appendTo) {
+      this.set(appendTo, (this.get(appendTo) || []).concat(ids));
+      note = files.length + ' added to the gallery';
+    } else if (assignTo) {
+      this.set(assignTo, ids[0]);
+      note = 'Uploaded and placed on the website';
+    } else {
+      const empty = this.slots().filter(s => !this.get(s.path));
+      const n = Math.min(empty.length, ids.length);
+      if (n) {
+        const store = JSON.parse(JSON.stringify(this.state.store));
+        for (let i = 0; i < n; i++) {
+          const parts = empty[i].path.split('.');
+          let node = store;
+          for (let j = 0; j < parts.length - 1; j++) node = node[parts[j]];
+          node[parts[parts.length - 1]] = ids[i];
+        }
+        this.save(store);
+        note = files.length + ' uploaded — ' + n + ' placed on the website';
+      }
+    }
+    this.setState({ saved: note });
+    this.loadMedia();
+  }
+
+  // Every media position the live website can render, in page order.
+  slots() {
+    const S = this.state.store;
+    const list = [{ path: 'hero.mediaId', label: 'Hero background image', hint: 'Used when no hero YouTube link · 16:9', ratio: '16/9', where: 'Hero' }];
+    S.projects.forEach((p, i) => {
+      list.push({ path: 'projects.' + i + '.mediaId', label: p.title || 'Project ' + (i + 1), hint: (p.visible === false ? 'hidden · ' : '') + (p.category || 'project') + ' thumbnail', ratio: '16/10', where: 'Stories we’ve told' });
+    });
+    S.team.forEach((t, i) => {
+      list.push({ path: 'team.' + i + '.mediaId', label: t.name || 'Team member ' + (i + 1), hint: 'Portrait · 3:4', ratio: '3/4', where: 'Behind the fire' });
+    });
+    S.showcaseCategories.forEach((c, i) => {
+      list.push({ path: 'showcaseCategories.' + i + '.heroMediaId', label: c.label + ' hero', hint: 'Image or video · 16:9', ratio: '16/9', where: 'Showcase' });
+      list.push({ path: 'showcaseCategories.' + i + '.cardMediaId', label: c.label + ' landing card', hint: 'Image or video · 16:9', ratio: '16/9', where: 'Showcase landing' });
+    });
+    list.push({ path: 'seo.ogMediaId', label: 'Social share image', hint: 'Link previews · 1200×630', ratio: '16/9', where: 'SEO' });
+    return list;
+  }
+  async removeMedia(id) {
+    const db = await this.db();
+    await new Promise((res) => { const r = db.transaction('files', 'readwrite').objectStore('files').delete(id); r.onsuccess = res; r.onerror = res; });
+    const hit = this.state.media.find(m => m.id === id);
+    if (hit) URL.revokeObjectURL(hit.url);
+    this.setState({ media: this.state.media.filter(m => m.id !== id) });
+  }
+  async setMediaAlt(id, alt) {
+    const db = await this.db();
+    const rec = await new Promise((res) => { const r = db.transaction('files', 'readonly').objectStore('files').get(id); r.onsuccess = () => res(r.result); r.onerror = () => res(null); });
+    if (!rec) return;
+    rec.alt = alt;
+    await new Promise((res) => { const r = db.transaction('files', 'readwrite').objectStore('files').put(rec); r.onsuccess = res; r.onerror = res; });
+    this.setState({ media: this.state.media.map(m => m.id === id ? Object.assign({}, m, { alt }) : m) });
+  }
+  mediaById(id) { return this.state.media.find(m => m.id === id) || null; }
+
+  // Media elements are built here (never as src="{{ hole }}" in markup, which
+  // would fire a failed request for the literal placeholder text mid-stream).
+  mediaEl(m, opts) {
+    if (!m) return null;
+    const o = opts || {};
+    const style = Object.assign({ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }, o.style || {});
+    if (/^video\//.test(m.type || '')) {
+      if (o.controls) return React.createElement('video', { key: m.id, src: m.url, controls: true, autoPlay: true, playsInline: true, style: style });
+      return React.createElement('video', { key: m.id, src: m.url, autoPlay: true, muted: true, loop: true, playsInline: true, style: style });
+    }
+    return React.createElement('img', { key: m.id, src: m.url, alt: m.alt || o.alt || '', loading: o.eager ? 'eager' : 'lazy', style: style });
+  }
+
+  listRowFlags(r, canMove, canRemove) { r.canMove = canMove; r.canRemove = canRemove; return r; }
+
+  // ---------- theme + seo ----------
+  applyTheme() {
+    const s = this.activeStore(), b = document.body.style;
+    b.setProperty('--accent', s.brand.accent);
+    b.setProperty('--ink', s.brand.ink);
+    b.setProperty('--paper', s.brand.paper);
+    b.setProperty('--hf', '"' + s.type.headingFont + '", sans-serif');
+    b.setProperty('--bf', '"' + s.type.bodyFont + '", sans-serif');
+    b.setProperty('--hs', String(s.type.headingScale));
+    b.setProperty('--hls', (s.type.letterSpacing / 1000) + 'em');
+    b.setProperty('--bs', s.type.bodySize + 'px');
+    b.setProperty('--cw', s.layout.container + 'px');
+    b.setProperty('--ss', String(s.layout.sectionSpacing));
+    b.setProperty('--r', s.layout.radius + 'px');
+    document.body.style.fontFamily = '"' + s.type.bodyFont + '", system-ui, sans-serif';
+    document.body.style.fontSize = s.type.bodySize + 'px';
+  }
+  meta(sel, attr, key, content) {
+    let el = document.head.querySelector(sel);
+    if (!el) { el = document.createElement('meta'); el.setAttribute(attr, key); document.head.appendChild(el); }
+    el.setAttribute('content', content);
+  }
+  // Logo: one asset by default. Light/dark variants are used only when the user
+  // actually uploads them, and the header picks by the background it is over.
+  logoFor(onLight) {
+    const b = this.state.store.brand;
+    const pick = onLight ? (b.logoDarkId || b.logoId) : (b.logoLightId || b.logoId);
+    return this.mediaById(pick) || this.mediaById(b.logoId);
+  }
+  logoHeights() {
+    const s = (this.state.store.brand.logoSize || 'medium');
+    const desk = s === 'small' ? 22 : s === 'large' ? 38 : 29;
+    return { desktop: desk, mobile: Math.round(desk * 0.78) };
+  }
+  applyFavicon() {
+    const m = this.mediaById(this.state.store.brand.faviconId);
+    if (!m) return;
+    let l = document.head.querySelector('link[rel="icon"]');
+    if (!l) { l = document.createElement('link'); l.rel = 'icon'; document.head.appendChild(l); }
+    if (l.href !== m.url) { l.type = m.type || 'image/png'; l.href = m.url; }
+    let a = document.head.querySelector('link[rel="apple-touch-icon"]');
+    if (!a) { a = document.createElement('link'); a.rel = 'apple-touch-icon'; document.head.appendChild(a); }
+    if (a.href !== m.url) a.href = m.url;
+  }
+
+  // GA4 loads once, only when a measurement ID is set in the CMS.
+  applyAnalytics() {
+    const id = ((this.state.store.analytics || {}).ga4 || '').trim();
+    if (!id || this._gaLoaded) return;
+    this._gaLoaded = true;
+    const g = document.createElement('script');
+    g.async = true;
+    g.src = 'https://www.googletagmanager.com/gtag/js?id=' + id;
+    document.head.appendChild(g);
+    window.dataLayer = window.dataLayer || [];
+    window.gtag = function () { window.dataLayer.push(arguments); };
+    window.gtag('js', new Date());
+    window.gtag('config', id);
+  }
+
+  // Which pageSeo record applies to the current screen.
+  activePage() {
+    const st = this.state, list = this.state.store.pageSeo || [];
+    const key = st.screen === 'showcaseCat' ? st.scCat
+      : st.screen === 'showcase' ? 'showcase'
+      : 'home';
+    return list.find(p => p.key === key) || list[0] || null;
+  }
+  jsonLd(id, data) {
+    let el = document.head.querySelector('script[data-ld="' + id + '"]');
+    if (!data) { if (el) el.remove(); return; }
+    if (!el) { el = document.createElement('script'); el.type = 'application/ld+json'; el.setAttribute('data-ld', id); document.head.appendChild(el); }
+    el.textContent = JSON.stringify(data, null, 2);
+  }
+  applySeo() {
+    const S = this.activeStore(), s = S.seo, b = S.business || {}, an = S.analytics || {};
+    const page = this.activePage();
+    const origin = (s.canonical || 'https://insfire.org/').replace(/\/$/, '');
+    const title = (page && page.title) || s.title;
+    const desc = (page && page.description) || s.description;
+    const url = page ? origin + (page.slug === '/' ? '/' : page.slug) : s.canonical;
+    const robots = (page ? ((page.index === false ? 'noindex' : 'index') + ', ' + (page.follow === false ? 'nofollow' : 'follow')) : s.robots);
+
+    document.title = title;
+    this.meta('meta[name="description"]', 'name', 'description', desc);
+    this.meta('meta[name="robots"]', 'name', 'robots', robots);
+    this.meta('meta[property="og:title"]', 'property', 'og:title', title);
+    this.meta('meta[property="og:description"]', 'property', 'og:description', desc);
+    this.meta('meta[property="og:type"]', 'property', 'og:type', s.ogType || 'website');
+    this.meta('meta[property="og:url"]', 'property', 'og:url', url);
+    this.meta('meta[property="og:site_name"]', 'property', 'og:site_name', s.siteName || S.brand.name);
+    this.meta('meta[name="twitter:card"]', 'name', 'twitter:card', s.twitterCard || 'summary_large_image');
+    this.meta('meta[name="twitter:title"]', 'name', 'twitter:title', title);
+    this.meta('meta[name="twitter:description"]', 'name', 'twitter:description', desc);
+    const og = this.mediaById((page && page.ogMediaId) || s.ogMediaId);
+    if (og) {
+      this.meta('meta[property="og:image"]', 'property', 'og:image', og.url);
+      this.meta('meta[name="twitter:image"]', 'name', 'twitter:image', og.url);
+    }
+    if (an.gscVerification) this.meta('meta[name="google-site-verification"]', 'name', 'google-site-verification', an.gscVerification);
+    let link = document.head.querySelector('link[rel="canonical"]');
+    if (!link) { link = document.createElement('link'); link.rel = 'canonical'; document.head.appendChild(link); }
+    link.href = url;
+
+    // --- structured data: only facts the CMS actually holds ---
+    const addr = {};
+    if (b.street) addr.streetAddress = b.street;
+    if (b.city) addr.addressLocality = b.city;
+    if (b.region) addr.addressRegion = b.region;
+    if (b.postcode) addr.postalCode = b.postcode;
+    if (b.country) addr.addressCountry = b.country;
+    const sameAs = (S.footer.socials || []).map(x => x.url).filter(u => /^https?:/.test(u));
+    const org = {
+      '@context': 'https://schema.org', '@type': b.type || 'ProfessionalService',
+      name: b.legalName || S.brand.name, url: origin + '/', description: s.description
+    };
+    if (Object.keys(addr).length) org.address = Object.assign({ '@type': 'PostalAddress' }, addr);
+    if (b.phone) org.telephone = b.phone;
+    if (b.email) org.email = b.email;
+    if (b.hours) org.openingHours = b.hours;
+    if (b.priceRange) org.priceRange = b.priceRange;
+    if (b.founded) org.foundingDate = b.founded;
+    if (b.lat && b.lng) org.geo = { '@type': 'GeoCoordinates', latitude: b.lat, longitude: b.lng };
+    if (b.mapUrl) org.hasMap = b.mapUrl;
+    if (sameAs.length) org.sameAs = sameAs;
+    if (og) org.image = og.url;
+    org.areaServed = [b.city, b.region, 'Malaysia'].filter(Boolean);
+    org.makesOffer = (S.services || []).map(sv => ({
+      '@type': 'Offer', itemOffered: { '@type': 'Service', name: sv.title,
+        serviceType: String(sv.items || '').split('\n').filter(Boolean).join(', ') }
+    }));
+    this.jsonLd('org', org);
+    this.jsonLd('website', { '@context': 'https://schema.org', '@type': 'WebSite', name: s.siteName || S.brand.name, url: origin + '/' });
+
+    const crumbs = [{ name: 'Home', slug: '/' }];
+    if (page && page.slug !== '/') {
+      if (/^\/showcase\//.test(page.slug)) crumbs.push({ name: 'Showcase', slug: '/showcase' });
+      crumbs.push({ name: page.label, slug: page.slug });
+    }
+    this.jsonLd('crumbs', crumbs.length > 1 ? {
+      '@context': 'https://schema.org', '@type': 'BreadcrumbList',
+      itemListElement: crumbs.map((c, i) => ({ '@type': 'ListItem', position: i + 1, name: c.name, item: origin + (c.slug === '/' ? '/' : c.slug) }))
+    } : null);
+
+    // VideoObject for published showcase films on the category page
+    if (this.state.screen === 'showcaseCat') {
+      const d = this.showcaseData(this.state.scCat);
+      const vids = d.films.filter(f => f.title && f.videoId).slice(0, 12).map(f => {
+        const v = { '@type': 'VideoObject', name: f.title, description: f.description || desc, uploadDate: (f.year || '') + '-01-01',
+          embedUrl: 'https://www.youtube-nocookie.com/embed/' + f.videoId,
+          thumbnailUrl: 'https://i.ytimg.com/vi/' + f.videoId + '/hqdefault.jpg' };
+        return v;
+      });
+      this.jsonLd('videos', vids.length ? { '@context': 'https://schema.org', '@type': 'ItemList', itemListElement: vids.map((v, i) => ({ '@type': 'ListItem', position: i + 1, item: v })) } : null);
+    } else {
+      this.jsonLd('videos', null);
+    }
+  }
+
+  // ---------- SEO health ----------
+  seoAudit() {
+    const S = this.state.store, pages = S.pageSeo || [];
+    const rows = pages.map(p => {
+      const issues = [];
+      if (!p.title) issues.push('no SEO title');
+      else if (p.title.length > 62) issues.push('title over 62 chars');
+      if (!p.description) issues.push('no meta description');
+      else if (p.description.length > 160) issues.push('description over 160 chars');
+      else if (p.description.length < 70) issues.push('description under 70 chars');
+      if (!p.slug) issues.push('no URL slug');
+      if (!p.ogMediaId && !S.seo.ogMediaId) issues.push('no social share image');
+      if (p.index === false) issues.push('set to noindex');
+      const dupT = pages.filter(x => x !== p && x.title && x.title === p.title).length;
+      const dupD = pages.filter(x => x !== p && x.description && x.description === p.description).length;
+      if (dupT) issues.push('duplicate title');
+      if (dupD) issues.push('duplicate description');
+      return { label: p.label, slug: p.slug, issues };
+    });
+    const media = this.state.media;
+    const noAlt = media.filter(m => !m.alt).length;
+    const b = S.business || {};
+    const an = S.analytics || {};
+    const global = [];
+    if (!b.street) global.push('Business street address is empty — needed for local search');
+    if (!b.hours) global.push('Opening hours are empty');
+    if (!b.lat || !b.lng) global.push('Map coordinates not set');
+    if (!an.ga4) global.push('Google Analytics 4 measurement ID not set');
+    if (!an.gscVerification) global.push('Google Search Console verification token not set');
+    if (!media.length) global.push('No media uploaded — search engines see placeholders');
+    else if (noAlt) global.push(noAlt + ' media file(s) missing alt text');
+    const hidden = [];
+    (S.sections || []).forEach(s => { if (!s.on) hidden.push(s.label + ' section is hidden'); });
+    return { rows, global, hidden, okCount: rows.filter(r => !r.issues.length).length };
+  }
+
+  // ---------- reveal animation ----------
+  observe() {
+    const a = this.state.store.anim;
+    const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const nodes = Array.from(document.querySelectorAll('[data-reveal]'));
+    const show = (el) => { el.style.opacity = '1'; el.style.transform = 'none'; };
+    if (a.mode === 'off' || reduced) {
+      nodes.forEach(n => { n.dataset.revealed = '1'; show(n); });
+      this.navObserve();
+      return;
+    }
+    const dist = a.mode === 'minimal' ? Math.min(12, a.distance) : a.distance;
+    // One observer for the page lifetime — rebuilding it on every update
+    // orphaned already-stamped nodes and left them permanently hidden.
+    if (!this._io) {
+      this._io = new IntersectionObserver((entries) => {
+        entries.forEach(e => { if (e.isIntersecting) { show(e.target); this._io.unobserve(e.target); } });
+      }, { rootMargin: '0px 0px -8% 0px', threshold: 0.05 });
+      // Re-adopt nodes a previous observer was holding. Without this, any node
+      // stamped by an observer that went away stays at opacity 0 forever —
+      // whole sections render blank.
+      Array.from(document.querySelectorAll('[data-reveal][data-io]')).forEach(el => this._io.observe(el));
+    }
+    // Last-resort net: anything hidden that is already at or above the viewport
+    // can never be scrolled into view again, so show it.
+    if (!this._revealGuard) {
+      this._revealGuard = () => {
+        const vh2 = window.innerHeight || 800;
+        Array.from(document.querySelectorAll('[data-reveal]')).forEach(el => {
+          if (el.style.opacity !== '0') return;
+          if (el.getBoundingClientRect().top < vh2 * 0.95) show(el);
+        });
+      };
+      window.addEventListener('scroll', this._revealGuard, { passive: true });
+      setTimeout(this._revealGuard, 400);
+    } else {
+      setTimeout(this._revealGuard, 100);
+    }
+    const vh = window.innerHeight || 800;
+    nodes.forEach(el => {
+      if (el.dataset.revealed) return;
+      el.dataset.revealed = '1';
+      el.style.transition = 'opacity ' + a.duration + 'ms cubic-bezier(.2,.75,.2,1), transform ' + (a.duration + 100) + 'ms cubic-bezier(.2,.75,.2,1)';
+      const top = el.getBoundingClientRect().top;
+      if (top < vh * 0.95) { show(el); return; }   // already on screen: never paint blank
+      el.style.opacity = '0';
+      el.style.transform = 'translateY(' + dist + 'px)';
+      this._io.observe(el);
+      el.dataset.io = '1';
+    });
+    // Net covers only nodes that were hidden but never handed to the observer;
+    // showing every node here would kill scroll reveal entirely.
+    clearTimeout(this._fb);
+    this._fb = setTimeout(() => {
+      Array.from(document.querySelectorAll('[data-reveal]')).forEach(el => { if (!el.dataset.io) show(el); });
+    }, a.duration + 1800);
+    this.navObserve();
+  }
+  navObserve() {
+    if (!this._nav) return;
+    const s = this.activeStore().nav;
+    this._nav.style.position = s.sticky ? 'sticky' : 'relative';
+    if (!s.adaptive) { if (this._navIo) { this._navIo.disconnect(); this._navIo = null; } return; }
+    // Built ONCE. Rebuilding it per update re-fired its initial entries, which
+    // called setState, which re-ran observe() — a loop that froze scrolling.
+    const targets = Array.from(document.querySelectorAll('[data-nav]'));
+    const sameSet = this._navTargets && this._navTargets.length === targets.length && this._navTargets.every((t, i) => t === targets[i]);
+    if (this._navIo && sameSet) return;
+    if (this._navIo) this._navIo.disconnect();
+    this._navTargets = targets;
+    this._navIo = new IntersectionObserver((entries) => {
+      const top = entries.filter(e => e.isIntersecting).sort((x, y) => x.boundingClientRect.top - y.boundingClientRect.top)[0];
+      if (!top || !this._nav) return;
+      const light = top.target.dataset.nav === 'light';
+      this._nav.style.background = light ? 'rgba(243,241,237,.86)' : 'rgba(10,10,10,.72)';
+      this._nav.style.color = light ? '#0a0a0a' : '#f2f0ec';
+      this._nav.style.borderBottomColor = light ? 'rgba(10,10,10,.1)' : 'rgba(255,255,255,.08)';
+      if (light !== this.state.navLight) this.setState({ navLight: light });
+    }, { rootMargin: '-70px 0px -85% 0px', threshold: 0 });
+    targets.forEach(n => this._navIo.observe(n));
+    if (this._navCta) this._navCta.style.display = window.innerWidth > 880 ? 'inline-flex' : 'none';
+  }
+  componentWillUnmount() { clearTimeout(this._pubTimer); clearTimeout(this._draftTimer); clearTimeout(this._toastTimer); clearInterval(this._sbPoll); if (typeof document !== 'undefined') document.body.style.overflow = ''; if (this._io) this._io.disconnect(); if (this._navIo) this._navIo.disconnect(); clearTimeout(this._fb); clearInterval(this._idleTimer); window.removeEventListener('keydown', this._onKey); window.removeEventListener('resize', this._onResize); window.removeEventListener('hashchange', this._onHash); ['click', 'keydown', 'scroll', 'touchstart'].forEach(ev => window.removeEventListener(ev, this.touchSession)); }
+
+  // ---------- auth ----------
+  async initAuth() {
+    let rec = null;
+    try { rec = JSON.parse(localStorage.getItem(AUTH_KEY) || 'null'); } catch (e) { rec = null; }
+    if (!rec) {
+      rec = { user: 'admin', salt: SEED_SALT, hash: SEED_HASH, isDefault: true };
+      try { localStorage.setItem(AUTH_KEY, JSON.stringify(rec)); } catch (e) { /* non-fatal */ }
+    }
+    this._auth = rec;
+    const t = parseInt(sessionStorage.getItem(SESSION_KEY) || '0', 10);
+    const live = !!(t && Date.now() - t < IDLE_MS);
+    this.setState({ authed: live, mustChange: live && !!rec.isDefault, acct: Object.assign({}, this.state.acct, { user: rec.user }) });
+  }
+  touchSession = () => { if (this.state.authed) { try { sessionStorage.setItem(SESSION_KEY, String(Date.now())); } catch (e) { /* non-fatal */ } } };
+  submitLogin = async (e) => {
+    if (e && e.preventDefault) e.preventDefault();
+    const st = this.state;
+    if (st.lockedUntil > Date.now()) return;
+    const rec = this._auth;
+    if (!rec) return;
+    const got = await hashPassword(st.loginPass || '', rec.salt);
+    const ok = (st.loginUser || '').trim() === rec.user && got.hash === rec.hash;
+    if (!ok) {
+      const tries = st.tries + 1;
+      if (tries >= MAX_TRIES) {
+        this.setState({ tries: 0, lockedUntil: Date.now() + LOCK_MS, loginPass: '', loginError: 'Too many failed attempts. Login locked for 5 minutes.' });
+        setTimeout(() => this.setState({ lockedUntil: 0, loginError: '' }), LOCK_MS);
+      } else {
+        this.setState({ tries: tries, loginPass: '', loginError: 'Incorrect username or password. ' + (MAX_TRIES - tries) + ' attempt(s) left.' });
+      }
+      return;
+    }
+    try { sessionStorage.setItem(SESSION_KEY, String(Date.now())); } catch (er) { /* non-fatal */ }
+    this.setState({ authed: true, loginOpen: false, loginPass: '', loginUser: '', loginError: '', tries: 0,
+      mustChange: !!rec.isDefault, screen: 'cms', tab: rec.isDefault ? 'Account' : 'Projects' });
+  };
+  logout = (msg) => {
+    try { sessionStorage.removeItem(SESSION_KEY); } catch (e) { /* non-fatal */ }
+    if (location.hash) history.replaceState(null, '', location.pathname + location.search);
+    this.setState({ authed: false, screen: 'home', loginOpen: false, loginError: typeof msg === 'string' ? msg : '', mustChange: false });
+  };
+  saveAccount = async () => {
+    const a = this.state.acct, rec = this._auth;
+    const fail = (err) => this.setState({ acct: Object.assign({}, a, { err: err, msg: '' }) });
+    if (!a.cur) return fail('Enter your current password.');
+    const got = await hashPassword(a.cur, rec.salt);
+    if (got.hash !== rec.hash) return fail('Current password is incorrect.');
+    const user = (a.user || '').trim();
+    if (user.length < 3) return fail('Username must be at least 3 characters.');
+    let next;
+    if (a.next || a.confirm) {
+      if (a.next.length < 8) return fail('New password must be at least 8 characters.');
+      if (a.next !== a.confirm) return fail('New password and confirmation do not match.');
+      const fresh = await hashPassword(a.next);
+      next = { user: user, salt: fresh.salt, hash: fresh.hash, isDefault: false };
+    } else {
+      next = { user: user, salt: rec.salt, hash: rec.hash, isDefault: false };
+    }
+    this._auth = next;
+    try { localStorage.setItem(AUTH_KEY, JSON.stringify(next)); } catch (e) { return fail('Could not save — browser storage is full.'); }
+    this.setState({ mustChange: false, acct: { user: next.user, cur: '', next: '', confirm: '', err: '', msg: 'Saved. Use these credentials from your next login.' } });
+  };
+  acctSet(k) { return (e) => this.setState({ acct: Object.assign({}, this.state.acct, { [k]: e.target.value, err: '', msg: '' }) }); }
+
+  // ---------- import / export ----------
+  exportConfig = () => {
+    const blob = new Blob([JSON.stringify(this.state.store, null, 2)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'insfire-content.json';
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+    this.setState({ saved: 'Exported insfire-content.json' });
+  };
+  importConfig = (e) => {
+    const f = e.target.files && e.target.files[0];
+    if (!f) return;
+    const r = new FileReader();
+    r.onload = () => { try { this.save(this.migrate(this.merge(defaults(), JSON.parse(r.result)))); this.setState({ saved: 'Imported content' }); } catch (err) { this.setState({ saved: 'Import failed — invalid JSON' }); } };
+    r.readAsText(f);
+  };
+  resetConfig = () => { if (window.confirm('Reset all content and design settings to defaults? Uploaded media is kept.')) this.save(defaults()); };
+
+  // ---------- field helpers ----------
+  tog(on) { const a = this.state.store.brand.accent; return { tBg: on ? a : 'rgba(255,255,255,.16)', tJustify: on ? 'flex-end' : 'flex-start', tKnob: on ? '#0a0a0a' : 'rgba(242,240,236,.75)' }; }
+  f(kind, label, path, extra) {
+    const v = this.get(path);
+    const base = { label, hint: (extra && extra.hint) || '', value: v == null ? '' : v, isText: false, isArea: false, isColor: false, isRange: false, isSelect: false, isToggle: false, options: [], min: 0, max: 1, step: 1, display: '', tBg: '', tJustify: '', tKnob: '' };
+    const o = Object.assign(base, extra || {});
+    if (kind === 'text') { o.isText = true; o.onChange = (e) => this.set(path, e.target.value); }
+    if (kind === 'area') { o.isArea = true; o.onChange = (e) => this.set(path, e.target.value); }
+    if (kind === 'color') { o.isColor = true; o.onChange = (e) => this.set(path, e.target.value); }
+    if (kind === 'range') { o.isRange = true; o.onChange = (e) => this.set(path, parseFloat(e.target.value)); o.display = (extra && extra.fmt) ? extra.fmt(v) : String(v); }
+    if (kind === 'select') { o.isSelect = true; o.onChange = (e) => this.set(path, e.target.value); }
+    if (kind === 'toggle') { o.isToggle = true; Object.assign(o, this.tog(!!v)); o.onChange = () => this.set(path, !v); }
+    return o;
+  }
+  opts(arr) { return arr.map(x => (typeof x === 'string' ? { value: x, label: x } : x)); }
+
+  // A gallery field: thumbnails of the array at `path` (click to remove) plus an
+  // uploader that appends straight into it.
+  upload(label, path, opts) {
+    const o = opts || {};
+    const ids = this.get(path) || [];
+    return {
+      label, hint: ids.length ? ids.length + ' file(s)' : 'empty', value: '', isUpload: true,
+      isText: false, isArea: false, isColor: false, isRange: false, isSelect: false, isToggle: false,
+      options: [], min: 0, max: 1, step: 1, display: '', tBg: '', tJustify: '', tKnob: '',
+      uploadLabel: ids.length ? '+ Add more files' : '+ Upload files',
+      thumbs: ids.map((id, k) => ({
+        el: this.mediaEl(this.mediaById(id), { style: { position: 'absolute', inset: 0 } }),
+        remove: () => { const a = ids.slice(); a.splice(k, 1); this.set(path, a); }
+      })),
+      onUpload: (e) => this.addFiles(e.target.files, o.assign, o.assign ? null : path),
+      onChange: () => {}
+    };
+  }
+
+  // Showcase data for one category: films and photo groups are nested inside the
+  // category, so Corporate media can never reach Wedding.
+  showcaseData(key) {
+    const S = this.activeStore();
+    const cats = S.showcaseCategories || [];
+    const cat = cats.find(c => c.key === key) || cats[0] || { key: '__none', label: 'SHOWCASE', heroTitle: 'SHOWCASE', heroSub: '', intro: '', videoTitle: 'FILM', photoTitle: 'PHOTOGRAPHY', videoDesc: '', photoDesc: '', ctaTitle: 'HAVE SOMETHING WORTH IGNITING?', ctaButton: 'Start a conversation', ctaHref: '#', showIntro: true, showVideo: true, showPhoto: true, films: [], photoGroups: [] };
+    const films = (cat.films || []).filter(f => f.published !== false)
+      .slice().sort((a, b) => (b.featured ? 1 : 0) - (a.featured ? 1 : 0))
+      .map(f => Object.assign({}, f, { videoId: youtubeId(f.url) }));
+    const photoGroups = (cat.photoGroups || []).filter(g => g.published !== false);
+    return { cat, films, photoGroups };
+  }
+
+  ratioFor(i) { return ['3/4', '1/1', '4/5', '1/1', '4/3', '3/4'][i % 6]; }
+  mediaOptions() { return [{ value: '', label: '— none (placeholder) —' }].concat(this.state.media.map(m => ({ value: m.id, label: m.name }))); }
+  listRow(path, i, heading, fields) {
+    const arr = this.get(path);
+    const move = (d) => () => {
+      const a = arr.slice(); const j = i + d;
+      if (j < 0 || j >= a.length) return;
+      const t = a[i]; a[i] = a[j]; a[j] = t; this.set(path, a);
+    };
+    return { heading, fields, canMove: true, canRemove: true,
+      up: move(-1), down: move(1),
+      remove: () => { const a = arr.slice(); a.splice(i, 1); this.set(path, a); } };
+  }
+
+  tabs() {
+    return {
+      Content: ['Projects', 'Showcase', 'Services', 'Team', 'Insights', 'Media'],
+      Design: ['Branding', 'Colours', 'Typography', 'Layout', 'Navigation', 'Animations'],
+      Site: ['Hero', 'Sections', 'Showcase pages', 'Footer'],
+      Search: ['SEO health', 'SEO', 'Business', 'Analytics'],
+      Account: ['Account']
+    };
+  }
+
+  buildTab() {
+    const t = this.state.tab, S = this.state.store;
+    const F = (k, l, p, e) => this.f(k, l, p, e);
+    const media = { isSelect: true, options: this.mediaOptions() };
+    const out = { fields: [], lists: [], help: '' };
+
+    if (t === 'Branding') { out.help = ''; out.fields = []; out.lists = []; return out; }
+    if (t === 'Colours') {
+      out.help = 'Brand colours apply instantly across the whole site. Keep orange as an accent — buttons, hovers, small marks.';
+      out.fields = [ F('color', 'Insfire orange (accent)', 'brand.accent'), F('color', 'Ink (dark sections)', 'brand.ink'), F('color', 'Paper (light sections)', 'brand.paper'), F('text', 'Logo wordmark', 'brand.name') ];
+    }
+    if (t === 'Typography') {
+      out.help = 'Heading scale multiplies every heading at once, so the responsive type ramp stays intact.';
+      out.fields = [
+        this.f('select', 'Heading font', 'type.headingFont', { options: this.opts(FONTS) }),
+        this.f('select', 'Body font', 'type.bodyFont', { options: this.opts(FONTS) }),
+        this.f('range', 'Heading scale', 'type.headingScale', { min: 0.7, max: 1.3, step: 0.01, fmt: v => (v * 100).toFixed(0) + '%' }),
+        this.f('range', 'Heading letter spacing', 'type.letterSpacing', { min: -60, max: 20, step: 2, fmt: v => (v / 1000).toFixed(3) + 'em' }),
+        this.f('range', 'Body text size', 'type.bodySize', { min: 14, max: 20, step: 0.5, fmt: v => v + 'px' })
+      ];
+    }
+    if (t === 'Layout') {
+      out.help = 'Container width sets the maximum content measure; section spacing scales all vertical rhythm together.';
+      out.fields = [
+        this.f('range', 'Container width', 'layout.container', { min: 1100, max: 1900, step: 20, fmt: v => v + 'px' }),
+        this.f('range', 'Section spacing', 'layout.sectionSpacing', { min: 0.6, max: 1.6, step: 0.05, fmt: v => (v * 100).toFixed(0) + '%' }),
+        this.f('range', 'Corner radius', 'layout.radius', { min: 0, max: 28, step: 1, fmt: v => v + 'px' }),
+        F('toggle', 'Show section numbers', 'layout.showNumbers')
+      ];
+    }
+    if (t === 'Navigation') {
+      out.help = 'Menu items, order and the header CTA. Adaptive colour flips the header between light and dark as it passes over sections.';
+      out.fields = [ F('toggle', 'Sticky header', 'nav.sticky'), F('toggle', 'Adaptive header colour', 'nav.adaptive'), F('text', 'CTA label', 'nav.ctaLabel'), F('text', 'CTA link', 'nav.ctaHref', { hint: 'url or #anchor' }) ];
+      out.lists = [{ title: 'Menu items', addLabel: '+ Add item', onAdd: () => this.set('nav.items', S.nav.items.concat([{ label: 'New', href: '#top' }])),
+        rows: S.nav.items.map((it, i) => this.listRow('nav.items', i, it.label || 'Item', [ F('text', 'Label', 'nav.items.' + i + '.label'), F('text', 'Link', 'nav.items.' + i + '.href') ])) }];
+    }
+    if (t === 'Animations') {
+      out.help = 'Cinematic is the designed default. Minimal shortens travel; Off disables reveals entirely. Reduced-motion visitors always get Off.';
+      out.fields = [
+        this.f('select', 'Motion mode', 'anim.mode', { options: this.opts(['cinematic', 'minimal', 'off']) }),
+        this.f('range', 'Reveal travel', 'anim.distance', { min: 0, max: 60, step: 2, fmt: v => v + 'px' }),
+        this.f('range', 'Reveal duration', 'anim.duration', { min: 400, max: 1600, step: 50, fmt: v => v + 'ms' })
+      ];
+    }
+    if (t === 'Hero') {
+      out.help = 'The hero background can be a YouTube film (plays muted and looping, with no controls and no link out) or an uploaded image. If both are set, the YouTube film wins. Overlay darkens whatever is behind the type.';
+      out.fields = [
+        F('text', 'Eyebrow line', 'hero.eyebrow'), F('text', 'Headline line 1', 'hero.line1'), F('text', 'Headline line 2', 'hero.line2'),
+        F('area', 'Supporting text', 'hero.sub'),
+        F('text', 'Hero YouTube link', 'hero.youtubeUrl', { hint: 'plays as a silent background film' }),
+        this.f('select', 'Hero image (used if no link)', 'hero.mediaId', media),
+        this.f('range', 'Overlay darkness', 'hero.overlay', { min: 0, max: 90, step: 5, fmt: v => v + '%' }),
+        F('text', 'Primary CTA label', 'hero.cta1'), F('text', 'Primary CTA link', 'hero.cta1href'),
+        F('text', 'Secondary CTA label', 'hero.cta2'), F('text', 'Secondary CTA link', 'hero.cta2href'),
+        F('text', 'Category line 1', 'hero.cat1'), F('text', 'Category line 2', 'hero.cat2')
+      ];
+    }
+    if (t === 'Sections') {
+      out.help = 'Drag order with the arrows, switch sections on or off, and edit the copy of each narrative block below.';
+      out.lists = [
+        { title: 'Section order & visibility', addLabel: '', onAdd: () => {},
+          rows: S.sections.map((sc, i) => {
+            const r = this.listRow('sections', i, String(i + 1).padStart(2, '0') + ' — ' + sc.label, [ F('text', 'Label', 'sections.' + i + '.label'), F('toggle', 'Visible on site', 'sections.' + i + '.on') ]);
+            r.canRemove = false;
+            return r;
+          }) },
+        { title: 'Why it matters — copy', addLabel: '', onAdd: () => {},
+          rows: [ { heading: 'Section copy', canMove: false, canRemove: false, up: () => {}, down: () => {}, remove: () => {},
+            fields: [ F('text', 'Headline', 'problem.h1'), F('text', 'Second line', 'problem.h2'), F('area', 'Intro', 'problem.intro'),
+              F('text', 'Bullet 1', 'problem.b1'), F('text', 'Bullet 2', 'problem.b2'), F('text', 'Bullet 3', 'problem.b3'),
+              F('area', 'Closing line', 'problem.outro'), F('text', 'Big line 1', 'problem.k1'), F('text', 'Big line 2', 'problem.k2'), F('text', 'Big line 3', 'problem.k3') ] } ] },
+        { title: 'About + Why Insfire — copy', addLabel: '+ Add pillar', onAdd: () => this.set('pillars', S.pillars.concat([{ title: 'NEW PILLAR', body: '' }])),
+          rows: [ { heading: 'About section', canMove: false, canRemove: false, up: () => {}, down: () => {}, remove: () => {},
+            fields: [ F('text', 'Line 1', 'about.l1'), F('text', 'Line 2', 'about.l2'), F('text', 'Line 3', 'about.l3'), F('text', 'Accent word', 'about.l4'),
+              F('area', 'Serif statement', 'about.serif'), F('area', 'Body copy', 'about.body'), F('text', 'Why Insfire title', 'whyusTitle') ] } ]
+            .concat(S.pillars.map((p, i) => this.listRow('pillars', i, p.title || 'Pillar', [ F('text', 'Title', 'pillars.' + i + '.title'), F('area', 'Body', 'pillars.' + i + '.body') ]))) },
+        { title: 'Studio numbers', addLabel: '+ Add stat', onAdd: () => this.set('about.stats', S.about.stats.concat([{ value: '0', suffix: '', label: 'New stat' }])),
+          rows: S.about.stats.map((st, i) => this.listRow('about.stats', i, st.value + st.suffix + ' ' + st.label, [ F('text', 'Value', 'about.stats.' + i + '.value'), F('text', 'Suffix', 'about.stats.' + i + '.suffix'), F('text', 'Label', 'about.stats.' + i + '.label') ])) },
+        { title: 'Closing CTA', addLabel: '', onAdd: () => {},
+          rows: [ { heading: 'CTA section', canMove: false, canRemove: false, up: () => {}, down: () => {}, remove: () => {},
+            fields: [ F('text', 'Line 1', 'cta.l1'), F('text', 'Line 2', 'cta.l2'), F('text', 'Accent word', 'cta.l3'), F('area', 'Supporting text', 'cta.sub'), F('text', 'Button label', 'cta.label'), F('text', 'Button link', 'cta.href'), F('text', 'Location line', 'cta.location') ] } ] }
+      ];
+    }
+    if (t === 'SEO') {
+      out.help = 'Per-page search settings. Every field here writes straight into the page — title, description, canonical URL, indexing and social preview. Aim for a title under 62 characters and a description of 70–160. Describe what the page offers and where you work; do not stuff keywords.';
+      out.fields = [
+        F('text', 'Site name', 'seo.siteName', { hint: 'used in social previews' }),
+        F('text', 'Site base URL', 'seo.canonical', { hint: 'required — e.g. https://insfire.org/' }),
+        this.f('select', 'Default social share image', 'seo.ogMediaId', media),
+        F('area', 'Fallback description', 'seo.description', { hint: 'used when a page has none' })
+      ];
+      out.lists = [{ title: 'Pages', addLabel: '+ Add page',
+        onAdd: () => this.set('pageSeo', (S.pageSeo || []).concat([{ key: 'page-' + ((S.pageSeo || []).length + 1), label: 'New page', slug: '/new-page', title: '', description: '', ogMediaId: '', index: true, follow: true }])),
+        rows: (S.pageSeo || []).map((p, i) => {
+          const b = 'pageSeo.' + i;
+          const bad = [];
+          if (!p.title) bad.push('title');
+          if (!p.description) bad.push('description');
+          if (!p.slug) bad.push('URL');
+          const flag = bad.length ? '○ needs ' + bad.join(', ') + ' — ' : (p.index === false ? '⊘ noindex — ' : '✓ ');
+          return this.listRow('pageSeo', i, flag + (p.label || 'Page'), [
+            F('text', 'Page name (internal)', b + '.label'),
+            F('text', 'URL slug', b + '.slug', { hint: 'e.g. /showcase/corporate' }),
+            F('text', 'SEO title', b + '.title', { hint: (p.title || '').length + '/62 — what the page offers + location' }),
+            F('area', 'Meta description', b + '.description', { hint: (p.description || '').length + '/160 — what the visitor gets here' }),
+            this.f('select', 'Social share image', b + '.ogMediaId', media),
+            F('toggle', 'Allow search engines to index', b + '.index'),
+            F('toggle', 'Allow following links', b + '.follow')
+          ]);
+        }) }];
+    }
+    if (t === 'Business') {
+      out.help = 'Your real business details. These feed the LocalBusiness structured data Google reads for local search — leave a field blank rather than guessing, since inaccurate data can be penalised. Coordinates come from right-clicking your location in Google Maps.';
+      out.fields = [
+        F('text', 'Business name', 'business.legalName'),
+        this.f('select', 'Business type', 'business.type', { options: this.opts(['ProfessionalService', 'LocalBusiness', 'Organization', 'PhotographStudio']) }),
+        F('text', 'Street address', 'business.street', { hint: 'needed for local search' }),
+        F('text', 'City', 'business.city'), F('text', 'State / region', 'business.region'),
+        F('text', 'Postcode', 'business.postcode'), F('text', 'Country code', 'business.country', { hint: 'MY' }),
+        F('text', 'Phone', 'business.phone'), F('text', 'WhatsApp link', 'business.whatsapp'), F('text', 'Email', 'business.email'),
+        F('text', 'Opening hours', 'business.hours', { hint: 'e.g. Mo-Fr 09:00-18:00' }),
+        F('text', 'Price range', 'business.priceRange', { hint: 'optional — e.g. $$' }),
+        F('text', 'Founded', 'business.founded', { hint: 'YYYY' }),
+        F('text', 'Latitude', 'business.lat'), F('text', 'Longitude', 'business.lng'),
+        F('text', 'Google Maps link', 'business.mapUrl')
+      ];
+    }
+    if (t === 'Analytics') {
+      out.help = 'Paste the IDs Google gives you. The verification token comes from Search Console → Add property → HTML tag (copy only the content value). Neither is a password.';
+      out.fields = [
+        F('text', 'GA4 measurement ID', 'analytics.ga4', { hint: 'G-XXXXXXXXXX' }),
+        F('text', 'Search Console verification', 'analytics.gscVerification', { hint: 'content value only' })
+      ];
+    }
+    if (t === 'SEO health') { out.help = ''; out.fields = []; out.lists = []; return out; }
+    if (t === 'Footer') {
+      out.help = 'Footer wordmark, tagline, links and contact details.';
+      out.fields = [ F('text', 'Tagline', 'footer.tagline'), F('text', 'Email', 'footer.email'), F('text', 'Location', 'footer.location'), F('text', 'Copyright', 'footer.copyright'), F('text', 'Right-hand note', 'footer.note') ];
+      out.lists = [
+        { title: 'Footer menu', addLabel: '+ Add link', onAdd: () => this.set('footer.nav', S.footer.nav.concat([{ label: 'New', href: '#top' }])),
+          rows: S.footer.nav.map((n, i) => this.listRow('footer.nav', i, n.label || 'Link', [ F('text', 'Label', 'footer.nav.' + i + '.label'), F('text', 'Link', 'footer.nav.' + i + '.href') ])) },
+        { title: 'Social links', addLabel: '+ Add social', onAdd: () => this.set('footer.socials', S.footer.socials.concat([{ label: 'New', url: 'https://' }])),
+          rows: S.footer.socials.map((n, i) => this.listRow('footer.socials', i, n.label || 'Social', [ F('text', 'Label', 'footer.socials.' + i + '.label'), F('text', 'URL', 'footer.socials.' + i + '.url') ])) }
+      ];
+    }
+
+    if (t === 'Projects') {
+      out.help = 'These are the work items shown in “Stories we’ve told” on the homepage. Title, client, category, year and location are the text under each image. Reorder with the arrows, hide with the Visible switch.';
+      out.lists = [{ title: 'Projects', addLabel: '+ New project',
+        onAdd: () => this.set('projects', [{ title: 'New project', client: '', category: '', year: String(new Date().getFullYear()), location: '', mediaId: '', featured: false, visible: true }].concat(S.projects)),
+        rows: S.projects.map((p, i) => this.listRow('projects', i, p.title || 'Untitled', [
+          F('text', 'Title', 'projects.' + i + '.title'), F('text', 'Client', 'projects.' + i + '.client'),
+          F('text', 'Category', 'projects.' + i + '.category'), F('text', 'Year', 'projects.' + i + '.year'), F('text', 'Location', 'projects.' + i + '.location'),
+          this.f('select', 'Media', 'projects.' + i + '.mediaId', media),
+          F('toggle', 'Featured', 'projects.' + i + '.featured'), F('toggle', 'Visible', 'projects.' + i + '.visible')
+        ])) }];
+    }
+    if (t === 'Services') {
+      out.help = 'Three capability groups. One item per line in the list field.';
+      out.fields = [ F('text', 'Section title', 'servicesTitle'), F('area', 'Section intro', 'servicesIntro'), F('text', 'Work section title', 'workTitle') ];
+      out.lists = [{ title: 'Capability groups', addLabel: '+ Add group', onAdd: () => this.set('services', S.services.concat([{ title: 'NEW', items: '' }])),
+        rows: S.services.map((s, i) => this.listRow('services', i, s.title || 'Group', [ F('text', 'Title', 'services.' + i + '.title'), F('area', 'Items (one per line)', 'services.' + i + '.items') ])) }];
+    }
+    if (t === 'Team') {
+      out.help = 'Team members shown in the “Behind the fire” section. Switch that section on under Site → Sections.';
+      out.fields = [ F('text', 'Section title', 'teamTitle'), F('area', 'Section intro', 'teamIntro') ];
+      out.lists = [{ title: 'Team members', addLabel: '+ Add member', onAdd: () => this.set('team', S.team.concat([{ name: 'New member', role: '', mediaId: '' }])),
+        rows: S.team.map((m, i) => this.listRow('team', i, m.name || 'Member', [ F('text', 'Name', 'team.' + i + '.name'), F('text', 'Role', 'team.' + i + '.role'), this.f('select', 'Portrait', 'team.' + i + '.mediaId', media) ])) }];
+    }
+    if (t === 'Insights') {
+      out.help = 'Articles listed on the homepage. The Insights section is currently switched off under Site → Sections.';
+      out.fields = [ F('text', 'Section title', 'insightsTitle') ];
+      out.lists = [{ title: 'Articles', addLabel: '+ Add article', onAdd: () => this.set('insights', [{ category: 'Strategy', title: 'New article', date: '', href: '#insights' }].concat(S.insights)),
+        rows: S.insights.map((a, i) => this.listRow('insights', i, a.title || 'Article', [ F('text', 'Title', 'insights.' + i + '.title'), F('text', 'Category', 'insights.' + i + '.category'), F('text', 'Date', 'insights.' + i + '.date'), F('text', 'Link', 'insights.' + i + '.href') ])) }];
+    }
+    if (t === 'Account') { out.help = ''; out.fields = []; out.lists = []; return out; }
+    if (t === 'Media') out.help = 'Images are stored in this browser and become selectable in Hero, Projects, Team, Showcase and SEO. Films are not uploaded — they use YouTube links under Content → Showcase.';
+
+    if (t === 'Showcase') {
+      out.help = 'Films are YouTube embeds — paste a link and it plays inside your page. Photo groups hold uploaded images. Both live inside a Showcase category, so Corporate content can never appear on Wedding. Unpublishing a film removes it from the page and from the film count.';
+      const ci = Math.min(this.state.cmsCat, Math.max(0, (S.showcaseCategories || []).length - 1));
+      const cat = (S.showcaseCategories || [])[ci];
+      if (!cat) { out.help = 'No Showcase categories yet — add one under Site → Showcase pages.'; return out; }
+      const b = 'showcaseCategories.' + ci;
+      out.lists = [
+        { title: cat.label + ' · films — ' + (cat.films || []).filter(x => x.published !== false && youtubeId(x.url)).length + ' of ' + (cat.films || []).length + ' showing on the site',
+          addLabel: '+ Add film',
+          onAdd: () => this.set(b + '.films', [{ title: 'New film', url: '', description: '', client: '', year: String(new Date().getFullYear()), location: '', featured: false, published: true }].concat(cat.films || [])),
+          rows: (cat.films || []).map((fm, j) => this.listRow(b + '.films', j, (fm.published === false ? '○ hidden — ' : '● ') + (fm.title || 'Untitled film'), [
+            F('text', 'Title', b + '.films.' + j + '.title'),
+            F('text', 'YouTube link', b + '.films.' + j + '.url', { hint: 'paste any YouTube URL' }),
+            F('area', 'Description', b + '.films.' + j + '.description'),
+            F('text', 'Client / couple', b + '.films.' + j + '.client'),
+            F('text', 'Year', b + '.films.' + j + '.year'),
+            F('text', 'Location', b + '.films.' + j + '.location'),
+            F('toggle', 'Featured (shown first)', b + '.films.' + j + '.featured'),
+            F('toggle', 'Show on site', b + '.films.' + j + '.published')
+          ])) },
+        { title: cat.label + ' · photo groups — 5 images each',
+          addLabel: '+ Add photo group',
+          onAdd: () => this.set(b + '.photoGroups', (cat.photoGroups || []).concat([{ title: 'NEW GROUP', description: '', gallery: [], published: true }])),
+          rows: (cat.photoGroups || []).map((g, j) => this.listRow(b + '.photoGroups', j, (g.published === false ? '○ hidden — ' : '● ') + (g.title || 'Group') + '  (' + (g.gallery || []).length + ' image' + ((g.gallery || []).length === 1 ? '' : 's') + ')', [
+            F('text', 'Group title', b + '.photoGroups.' + j + '.title'),
+            F('area', 'Group description', b + '.photoGroups.' + j + '.description'),
+            F('toggle', 'Show on site', b + '.photoGroups.' + j + '.published'),
+            this.upload('Images — 5 recommended', b + '.photoGroups.' + j + '.gallery')
+          ])) }
+      ];
+    }
+
+    if (t === 'Showcase pages') {
+      out.help = 'Each Showcase category has its own page settings — hero, intro, section titles, CTA and section visibility. Its films and photo groups are edited under Content → Showcase. Add a category here and it gets its own page automatically.';
+      out.fields = [ F('text', 'Landing headline', 'showcaseLanding.title'), F('area', 'Landing supporting text', 'showcaseLanding.sub') ];
+      out.lists = [{ title: 'Showcase categories', addLabel: '+ Add category',
+        onAdd: () => this.set('showcaseCategories', S.showcaseCategories.concat([{ key: 'category-' + (S.showcaseCategories.length + 1), label: 'NEW CATEGORY', blurb: '', cardLabel: 'View', cardMediaId: '', heroTitle: 'NEW CATEGORY', heroSub: '', heroMediaId: '', intro: '', videoTitle: 'FILM', videoDesc: '', photoTitle: 'PHOTOGRAPHY', photoDesc: '', ctaTitle: 'HAVE SOMETHING WORTH IGNITING?', ctaButton: 'Start a conversation', ctaHref: 'https://wa.me/60123164569', showIntro: true, showVideo: true, showPhoto: true, films: [], photoGroups: [] }])),
+        rows: S.showcaseCategories.map((c, i) => {
+          const b = 'showcaseCategories.' + i;
+          return this.listRow('showcaseCategories', i, c.label || 'Category', [
+            F('text', 'Menu label', b + '.label'), F('text', 'URL key', b + '.key', { hint: '/showcase/<key>' }),
+            F('area', 'Landing blurb', b + '.blurb'), F('text', 'Landing button', b + '.cardLabel'),
+            this.f('select', 'Landing card media', b + '.cardMediaId', media),
+            F('text', 'Hero title', b + '.heroTitle'), F('area', 'Hero subtitle', b + '.heroSub'),
+            this.f('select', 'Hero media', b + '.heroMediaId', media),
+            F('area', 'Introduction', b + '.intro'),
+            F('text', 'Film section title', b + '.videoTitle'), F('area', 'Film section description', b + '.videoDesc'),
+            F('text', 'Photography section title', b + '.photoTitle'), F('area', 'Photography section description', b + '.photoDesc'),
+            F('text', 'CTA headline', b + '.ctaTitle'), F('text', 'CTA button', b + '.ctaButton'), F('text', 'CTA link', b + '.ctaHref'),
+            F('toggle', 'Show introduction', b + '.showIntro'), F('toggle', 'Show film section', b + '.showVideo'),
+            F('toggle', 'Show photography section', b + '.showPhoto')
+          ]);
+        }) }];
+    }
+    return out;
+  }
+
+  renderVals() {
+    const st = this.state;
+    const S = this.activeStore();
+    const acc = S.brand.accent;
+    const visible = S.sections.filter(s => s.on);
+    const sec = {};
+    S.sections.forEach((s, i) => {
+      sec[s.key] = { order: s.on ? (i + 2) : 99, display: s.on ? 'block' : 'none', label: s.label, num: String(visible.findIndex(v => v.key === s.key) + 1).padStart(2, '0') };
+    });
+    ['why', 'services', 'work', 'about', 'team', 'whyus', 'insights'].forEach(k => { if (!sec[k]) sec[k] = { order: 99, display: 'none', label: '', num: '' }; });
+
+    const heroMedia = this.mediaById(S.hero.mediaId);
+    const heroIsVideo = !!(heroMedia && /^video\//.test(heroMedia.type));
+    const heroYt = youtubeId(S.hero.youtubeUrl);
+    const ov = S.hero.overlay / 100;
+
+    const shown = S.projects.filter(p => p.visible !== false);
+    const ordered = shown.slice().sort((a, b) => (b.featured ? 1 : 0) - (a.featured ? 1 : 0));
+    const spans = [12, 7, 5, 12, 6, 6];
+    const ratios = ['16/7', '4/3', '1/1', '21/8', '4/3', '4/3'];
+
+    const tab = this.buildTab();
+    const groups = this.tabs();
+    const navGroups = Object.keys(groups).map(title => ({
+      title,
+      items: groups[title].map(label => ({
+        label,
+        bg: st.tab === label ? 'rgba(255,255,255,.09)' : 'transparent',
+        fg: st.tab === label ? '#f2f0ec' : 'rgba(242,240,236,.62)',
+        bar: st.tab === label ? acc : 'transparent',
+        onClick: () => this.setState({ tab: label })
+      }))
+    }));
+
+    const caseMedia = null;
+    void caseMedia;
+    return {
+      // Flat #0a0a0a cover while the published row is in flight — no flash of
+      // default content, no visible "loading" text. CMS is never covered.
+      booting: st.pubLoading && st.screen !== 'cms',
+      showSwitcher: st.authed,
+      isHome: st.screen === 'home', isCms: st.screen === 'cms' && this.adminUnlocked(),
+      isShowcase: st.screen === 'showcase', isShowcaseCat: st.screen === 'showcaseCat',
+      // Magic-link screen: shown whenever /admin is requested in Supabase mode
+      // without a session. Local password modal is suppressed in that mode.
+      sbLoginOpen: st.sbMode && st.screen === 'cms' && !st.sbSession,
+      sbLogin: {
+        email: st.sbEmail,
+        setEmail: (e) => this.setState({ sbEmail: e.target.value, sbErr: '' }),
+        submit: this.sendMagicLink,
+        sent: st.sbSent, formDisplay: st.sbSent ? 'none' : 'grid', sentDisplay: st.sbSent ? 'grid' : 'none',
+        buttonLabel: st.sbBusy ? 'Sending…' : 'Email me a sign-in link',
+        error: st.sbErr, errorDisplay: st.sbErr ? 'block' : 'none',
+        again: () => this.setState({ sbSent: false }),
+        close: () => { if (location.hash) history.replaceState(null, '', location.pathname + location.search); this.setState({ screen: 'home' }); }
+      },
+      // Save status: Supabase state when wired, local note otherwise.
+      sbSaveNote: st.sbMode
+        ? (st.sbSaveState === 'saving' ? 'Saving…' : st.sbSaveState === 'saved' ? 'Saved' : st.sbSaveState === 'error' ? 'Save failed' : st.saved)
+        : st.saved,
+      sbRetryDisplay: st.sbMode && st.sbSaveState === 'error' ? 'inline-flex' : 'none',
+      sbRetry: () => { this.setState({ sbSaveState: 'saving', sbSaveErr: '' }); this.writeDraft(); },
+      sbSaveErr: st.sbSaveErr, sbSaveErrDisplay: st.sbMode && st.sbSaveErr ? 'block' : 'none',
+      publishLabel: st.publishBusy ? 'Publishing…' : 'Publish',
+      publishAction: st.sbMode ? this.publishDraft : this.exportConfig,
+      toast: st.toast, toastDisplay: st.toast ? 'flex' : 'none',
+      cmsLogout: st.sbMode ? this.sbLogout : this.logout,
+      loginOpen: st.loginOpen && !st.authed && !st.sbMode,
+      login: {
+        user: st.loginUser, pass: st.loginPass,
+        passType: st.showPass ? 'text' : 'password',
+        toggleLabel: st.showPass ? 'Hide' : 'Show',
+        toggle: () => this.setState({ showPass: !st.showPass }),
+        setUser: (e) => this.setState({ loginUser: e.target.value, loginError: '' }),
+        setPass: (e) => this.setState({ loginPass: e.target.value, loginError: '' }),
+        submit: this.submitLogin,
+        close: () => { if (location.hash) history.replaceState(null, '', location.pathname + location.search); this.setState({ loginOpen: false, loginError: '', loginPass: '' }); },
+        error: st.loginError, errorDisplay: st.loginError ? 'block' : 'none',
+        disabled: st.lockedUntil > Date.now(),
+        buttonLabel: st.lockedUntil > Date.now() ? 'Locked' : 'Log in',
+        buttonBg: st.lockedUntil > Date.now() ? 'rgba(255,255,255,.18)' : acc,
+        buttonFg: st.lockedUntil > Date.now() ? 'rgba(242,240,236,.5)' : '#0a0a0a'
+      },
+      logout: () => this.logout(),
+      acct: Object.assign({}, st.acct, {
+        setUser: this.acctSet('user'), setCur: this.acctSet('cur'), setNext: this.acctSet('next'), setConfirm: this.acctSet('confirm'),
+        save: this.saveAccount,
+        errDisplay: st.acct.err ? 'block' : 'none', msgDisplay: st.acct.msg ? 'block' : 'none',
+        warnDisplay: st.mustChange ? 'block' : 'none'
+      }),
+      isAccountTab: st.tab === 'Account',
+      isBrandingTab: st.tab === 'Branding',
+      branding: (function (self) {
+        const b = S.brand;
+        const slot = (path, title, note, onDark) => {
+          const m = self.mediaById(self.get(path));
+          return {
+            title: title, note: note,
+            has: !!m, none: !m,
+            name: m ? m.name : 'No file yet',
+            bg: onDark ? '#0a0a0a' : '#f3f1ed',
+            el: m ? React.createElement('img', { key: path + m.id, src: m.url, alt: '', style: { maxHeight: '46px', maxWidth: '100%', width: 'auto', objectFit: 'contain' } }) : null,
+            upload: (e) => self.addFiles(e.target.files, path),
+            clear: () => self.set(path, ''),
+            options: self.mediaOptions(),
+            value: self.get(path) || '',
+            onPick: (e) => self.set(path, e.target.value)
+          };
+        };
+        const h = self.logoHeights();
+        const prev = (onLight, px) => {
+          const m = self.logoFor(onLight);
+          return m ? React.createElement('img', { key: 'p' + (onLight ? 'l' : 'd') + m.id + px, src: m.url, alt: '', style: { display: 'block', height: px + 'px', width: 'auto', maxWidth: '180px', objectFit: 'contain' } }) : null;
+        };
+        return {
+          slots: [
+            slot('brand.logoId', 'Primary logo', 'Your main Insfire logo, ideally SVG or PNG with a transparent background. This is the only upload most sites need.', true),
+            slot('brand.logoLightId', 'Light version — optional', 'Only upload this if your primary logo is hard to read on the dark header.', true),
+            slot('brand.logoDarkId', 'Dark version — optional', 'Only upload this if your primary logo disappears on the light sections.', false),
+            slot('brand.faviconId', 'Favicon / site icon', 'The small icon in the browser tab. A square PNG of 512×512 works everywhere.', true)
+          ],
+          altValue: b.logoAlt || '',
+          setAlt: (e) => self.set('brand.logoAlt', e.target.value),
+          wordmark: b.name,
+          setWordmark: (e) => self.set('brand.name', e.target.value),
+          sizes: ['small', 'medium', 'large'].map(s => ({
+            label: s,
+            bg: (b.logoSize || 'medium') === s ? acc : 'transparent',
+            fg: (b.logoSize || 'medium') === s ? '#0a0a0a' : 'rgba(242,240,236,.65)',
+            border: (b.logoSize || 'medium') === s ? acc : 'rgba(255,255,255,.2)',
+            onClick: () => self.set('brand.logoSize', s)
+          })),
+          hasLogo: !!self.mediaById(b.logoId),
+          noLogo: !self.mediaById(b.logoId),
+          deskDark: prev(false, h.desktop),
+          deskLight: prev(true, h.desktop),
+          mob: prev(false, h.mobile),
+          navPreview: (S.nav.items || []).map(n => ({ label: n.label })),
+          sizeNote: 'Header height stays fixed; the logo scales inside it at ' + h.desktop + 'px on desktop and ' + h.mobile + 'px on mobile.'
+        };
+      })(this),
+      isHealthTab: st.tab === 'SEO health',
+      health: (function (self) {
+        const a = self.seoAudit();
+        return {
+          summary: a.okCount + ' of ' + a.rows.length + ' pages fully filled in',
+          rows: a.rows.map(r => ({
+            label: r.label, slug: r.slug,
+            status: r.issues.length ? r.issues.join(' · ') : 'All checks passed',
+            color: r.issues.length ? '#ff7a5e' : 'var(--accent)',
+            mark: r.issues.length ? '○' : '✓'
+          })),
+          global: a.global.map(g => ({ text: g })),
+          globalDisplay: a.global.length ? 'grid' : 'none',
+          hidden: a.hidden.map(h => ({ text: h })),
+          hiddenDisplay: a.hidden.length ? 'grid' : 'none'
+        };
+      })(this),
+      screens: [ { label: 'Homepage', key: 'home' }, { label: 'Showcase', key: 'showcase' }, { label: 'CMS editor', key: 'cms' } ].map(x => ({
+        label: x.label, bg: st.screen === x.key ? acc : 'transparent', fg: st.screen === x.key ? '#0a0a0a' : 'rgba(242,240,236,.7)',
+        onClick: () => this.setState({ screen: x.key })
+      })),
+      goHome: () => this.setState({ screen: 'home' }),
+      navRef: (el) => { this._nav = el; }, navCtaRef: (el) => { this._navCta = el; },
+      navPosition: S.nav.sticky ? 'sticky' : 'relative',
+      brandName: S.brand.name,
+      // Header brand: uploaded logo when present, wordmark otherwise. Never
+      // stretched — height is fixed by the size setting, width follows.
+      logo: (function (self) {
+        const h = self.logoHeights();
+        const px = st.narrow ? h.mobile : h.desktop;
+        const m = self.logoFor(st.navLight);
+        const alt = S.brand.logoAlt || S.brand.name;
+        return {
+          has: !!m, none: !m, alt: alt,
+          el: m ? React.createElement('img', { key: m.id + px, src: m.url, alt: alt, style: { display: 'block', height: px + 'px', width: 'auto', maxWidth: st.narrow ? '150px' : '220px', objectFit: 'contain' } }) : null
+        };
+      })(this),
+      // Dark-header screens (case study, showcase) always use the light variant.
+      logoDark: (function (self) {
+        const h = self.logoHeights();
+        const px = st.narrow ? h.mobile : h.desktop;
+        const m = self.logoFor(false);
+        const alt = S.brand.logoAlt || S.brand.name;
+        return {
+          has: !!m, none: !m, alt: alt,
+          el: m ? React.createElement('img', { key: 'd' + m.id + px, src: m.url, alt: alt, style: { display: 'block', height: px + 'px', width: 'auto', maxWidth: st.narrow ? '150px' : '220px', objectFit: 'contain' } }) : null
+        };
+      })(this),
+      navItems: S.nav.items.map(n => ({ label: n.label, href: n.href, onClick: n.href === '#showcase' ? (e) => { e.preventDefault(); this.setState({ screen: 'showcase' }); } : null })),
+      navCta: { label: S.nav.ctaLabel, href: S.nav.ctaHref },
+      // Inline menu on desktop, hamburger + overlay at/below 880px. The adaptive
+      // colour observer still drives the closed header's colour untouched.
+      navMenuDisplay: st.mobile ? 'none' : 'flex',
+      navBurgerDisplay: st.mobile ? 'flex' : 'none',
+      mobileNavOpen: st.mobile && st.mobileNav,
+      mobileNavExpanded: st.mobileNav ? 'true' : 'false',
+      toggleMobileNav: () => this.setMobileNav(!this.state.mobileNav),
+      closeMobileNav: () => this.setMobileNav(false),
+      stopProp: (e) => e.stopPropagation(),
+      mobileNavItems: S.nav.items.map(n => ({ label: n.label, href: n.href, onClick: (e) => {
+        if (n.href === '#showcase') { e.preventDefault(); this.setState({ screen: 'showcase' }); }
+        this.setMobileNav(false);
+      } })),
+      cmsHintDisplay: st.authed ? 'flex' : 'none',
+      numbersDisplay: S.layout.showNumbers ? 'block' : 'none',
+      sec,
+      hero: Object.assign({}, S.hero, {
+        hasYt: !!heroYt && st.ytReady, hasMedia: !heroYt && !!heroMedia, noMedia: !heroYt && !heroMedia,
+        isVideo: heroIsVideo, isImage: !!heroMedia && !heroIsVideo,
+        // Background film: muted, looping, no controls, no keyboard, no related
+        // videos, and pointer-events blocked by the wrapper — nothing is
+        // clickable, so a visitor can never be sent to YouTube.
+        ytEl: heroYt ? React.createElement('iframe', {
+          key: 'hero' + heroYt,
+          src: 'https://www.youtube-nocookie.com/embed/' + heroYt + '?autoplay=1&mute=1&loop=1&playlist=' + heroYt
+            + '&controls=0&modestbranding=1&rel=0&playsinline=1&disablekb=1&fs=0&iv_load_policy=3',
+          title: 'Insfire showreel',
+          allow: 'autoplay; encrypted-media; picture-in-picture',
+          frameBorder: '0',
+          tabIndex: -1,
+          'aria-hidden': 'true',
+          referrerPolicy: 'strict-origin-when-cross-origin',
+          style: {
+            position: 'absolute', top: '50%', left: '50%',
+            transform: 'translate(-50%, -50%)',
+            width: 'max(100vw, 177.78vh)', height: 'max(56.25vw, 100vh)',
+            border: 0, pointerEvents: 'none'
+          }
+        }) : null,
+        mediaUrl: heroMedia ? heroMedia.url : '', mediaAlt: heroMedia ? (heroMedia.alt || 'Insfire hero') : '',
+        mediaEl: this.mediaEl(heroMedia, { eager: true, alt: 'Insfire hero', style: heroIsVideo ? {} : { animation: 'insSlowZoom 22s ease-in-out infinite alternate' } }),
+        o1: (0.35 + ov * 0.55).toFixed(2), o2: (ov * 0.75).toFixed(2)
+      }),
+      problem: S.problem,
+      servicesTitle: S.servicesTitle, servicesIntro: S.servicesIntro,
+      services: S.services.map((s, i) => ({ num: String(i + 1).padStart(2, '0'), title: s.title, items: String(s.items || '').split('\n').filter(Boolean).map(label => ({ label })) })),
+      workTitle: S.workTitle,
+      workCount: shown.length + ' selected project' + (shown.length === 1 ? '' : 's'),
+      workItems: ordered.slice(0, 6).map((p, i) => {
+        const m = this.mediaById(p.mediaId);
+        return {
+          span: spans[i] || 6, ratio: ratios[i] || '4/3', align: i === 2 ? 'end' : 'start',
+          hasMedia: !!m, noMedia: !m, mediaUrl: m ? m.url : '', alt: m ? (m.alt || p.title) : '',
+          mediaEl: this.mediaEl(m, { alt: p.title }),
+          placeholder: (p.category || 'project') + ' · upload media in CMS',
+          featured: !!p.featured, title: p.title,
+          meta: [p.client, p.category].filter(Boolean).join(' · '),
+          metaColor: p.featured ? acc : 'rgba(242,240,236,.5)',
+          weight: i === 0 ? 600 : 500,
+          titleSize: i === 0 ? 'clamp(20px,2.6vw,38px)' : 'clamp(17px,1.8vw,26px)',
+          stamp: [p.year, p.location].filter(Boolean).join(' · ')
+        };
+      }),
+      about: S.about, stats: S.about.stats,
+      teamTitle: S.teamTitle, teamIntro: S.teamIntro,
+      team: S.team.map(t => { const m = this.mediaById(t.mediaId); return { name: t.name, role: t.role, hasMedia: !!m, noMedia: !m, mediaUrl: m ? m.url : '', mediaEl: this.mediaEl(m, { alt: t.name }) }; }),
+      whyusTitle: S.whyusTitle,
+      pillars: S.pillars.map((p, i) => ({ title: p.title, body: p.body, border: i === 0 ? acc : 'rgba(255,255,255,.18)' })),
+      insightsTitle: S.insightsTitle, insights: S.insights,
+      cta: S.cta,
+      footer: Object.assign({}, S.footer, { mailto: 'mailto:' + S.footer.email }),
+      footerNav: S.footer.nav, socials: S.footer.socials,
+
+      showcaseTitle: S.showcaseLanding.title,
+      showcaseSub: S.showcaseLanding.sub,
+      showcaseCards: S.showcaseCategories.map(c => {
+        const d = this.showcaseData(c.key);
+        return {
+          label: c.label, blurb: c.blurb, cardLabel: c.cardLabel || ('View ' + c.label.toLowerCase()),
+          mediaEl: this.mediaEl(this.mediaById(c.cardMediaId || c.heroMediaId), { style: { position: 'absolute', inset: 0 } }),
+          hasMedia: !!this.mediaById(c.cardMediaId || c.heroMediaId),
+          noMedia: !this.mediaById(c.cardMediaId || c.heroMediaId),
+          count: d.films.filter(f => f.videoId).length + ' film' + (d.films.filter(f => f.videoId).length === 1 ? '' : 's'),
+          open: () => this.setState({ screen: 'showcaseCat', scCat: c.key })
+        };
+      }),
+      sc: (function (self) {
+        const d = self.showcaseData(st.scCat);
+        const c = d.cat || {};
+        const heroM = self.mediaById(c.heroMediaId);
+        return {
+          key: c.key, label: c.label,
+          heroTitle: c.heroTitle || c.label, heroSub: c.heroSub || '',
+          heroEl: self.mediaEl(heroM, { eager: true, alt: c.heroTitle, style: { position: 'absolute', inset: 0 } }),
+          heroHas: !!heroM, heroNone: !heroM,
+          intro: c.intro, introDisplay: c.showIntro === false ? 'none' : 'block',
+          videoTitle: c.videoTitle, videoDesc: c.videoDesc,
+          photoTitle: c.photoTitle, photoDesc: c.photoDesc,
+          ctaTitle: c.ctaTitle, ctaButton: c.ctaButton, ctaHref: c.ctaHref,
+          filmCount: d.films.filter(f => f.videoId).length + ' film' + (d.films.filter(f => f.videoId).length === 1 ? '' : 's'),
+          groupCount: d.photoGroups.length + ' series',
+          videoDisplay: (c.showVideo !== false && d.films.filter(f => f.videoId).length) ? 'block' : 'none',
+          photoDisplay: (c.showPhoto !== false && d.photoGroups.length) ? 'block' : 'none',
+          emptyDisplay: (d.films.filter(f => f.videoId).length || d.photoGroups.length) ? 'none' : 'block',
+          videos: d.films.filter(v => v.videoId).map(v => ({
+            title: v.title, description: v.description || '',
+            meta: [v.client, v.year, v.location].filter(Boolean).join(' · '),
+            hasVideo: !!v.videoId, noVideo: !v.videoId,
+            featBorder: v.featured ? acc : 'transparent',
+            frame: v.videoId ? React.createElement('iframe', {
+              key: v.videoId,
+              src: 'https://www.youtube-nocookie.com/embed/' + v.videoId,
+              title: v.title || 'Insfire film',
+              loading: 'lazy',
+              allowFullScreen: true,
+              frameBorder: '0',
+              referrerPolicy: 'strict-origin-when-cross-origin',
+              allow: 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share',
+              style: { position: 'absolute', inset: 0, width: '100%', height: '100%', border: 0, display: 'block' }
+            }) : null
+          })),
+          groupTracks: st.narrow ? 'repeat(2,minmax(0,1fr))' : 'repeat(6,minmax(0,1fr))',
+          groups: d.photoGroups.map((g, gi) => {
+            const list = (g.gallery || []).map(id => ({ id, caption: g.title }));
+            const cells = list.length ? list : [0, 1, 2, 3, 4].map(() => ({ id: '', caption: '' }));
+            return {
+              num: String(gi + 1).padStart(2, '0'),
+              title: g.title, description: g.description || '',
+              countLabel: list.length ? list.length + ' image' + (list.length === 1 ? '' : 's') : 'no images yet',
+              cells: cells.map((cell, k) => ({
+                el: self.mediaEl(self.mediaById(cell.id), { style: { position: 'absolute', inset: 0 } }),
+                has: !!cell.id, none: !cell.id,
+                // 6 fixed tracks: row 1 = 3+3, row 2 = 2+2+2 — both flush.
+                // Narrow: 2 tracks, lead image full width.
+                wide: st.narrow ? (k === 0 ? 'span 2' : 'span 1') : (k < 2 ? 'span 3' : 'span 2'),
+                ratio: st.narrow ? (k === 0 ? '3/2' : '1/1') : (k < 2 ? '3/2' : '1/1'),
+                open: () => { if (cell.id) self.setState({ lightbox: { list, index: k } }); }
+              }))
+            };
+          }),
+          others: (self.state.store.showcaseCategories || []).filter(o => o.key !== c.key).map(o => ({
+            label: o.label, onClick: () => self.setState({ screen: 'showcaseCat', scCat: o.key })
+          }))
+        };
+      })(this),
+      catSwitchDisplay: (st.tab === 'Showcase' && (S.showcaseCategories || []).length > 1) ? 'flex' : 'none',
+      catSwitch: (S.showcaseCategories || []).map((c, i) => ({
+        label: c.label,
+        bg: st.cmsCat === i ? acc : 'transparent',
+        fg: st.cmsCat === i ? '#0a0a0a' : 'rgba(242,240,236,.65)',
+        border: st.cmsCat === i ? acc : 'rgba(255,255,255,.2)',
+        onClick: () => this.setState({ cmsCat: i })
+      })),
+      goShowcase: () => this.setState({ screen: 'showcase' }),
+      lb: (function (self) {
+        const L = st.lightbox;
+        if (!L) return { open: false, el: null, caption: '', counter: '', prev: () => {}, next: () => {}, close: () => {} };
+        const cur = L.list[L.index] || {};
+        const m = self.mediaById(cur.id);
+        return {
+          open: true, caption: cur.caption || '',
+          counter: (L.index + 1) + ' / ' + L.list.length,
+          navDisplay: L.list.length > 1 ? 'inline-flex' : 'none',
+          el: self.mediaEl(m, { eager: true, controls: true, style: { position: 'relative', inset: 'auto', width: 'auto', height: 'auto', maxWidth: '92vw', maxHeight: '78vh', objectFit: 'contain' } }),
+          prev: (e) => { e.stopPropagation(); self.setState({ lightbox: { list: L.list, index: (L.index - 1 + L.list.length) % L.list.length } }); },
+          next: (e) => { e.stopPropagation(); self.setState({ lightbox: { list: L.list, index: (L.index + 1) % L.list.length } }); },
+          close: () => self.setState({ lightbox: null }),
+          stop: (e) => e.stopPropagation()
+        };
+      })(this),
+      navGroups, cmsTitle: st.tab, savedNote: st.saved, tabHelp: tab.help,
+      fields: tab.fields, hasFields: tab.fields.length > 0,
+      lists: tab.lists.map(L => Object.assign({ hasAdd: !!L.addLabel }, L, {
+        rows: (L.rows || []).map(r => Object.assign({ canMove: true, canRemove: true }, r))
+      })),
+      hasLists: tab.lists.length > 0,
+      isMediaTab: st.tab === 'Media',
+      mediaList: st.media.map(m => ({
+        id: m.id, name: m.name, url: m.url, alt: m.alt,
+        isImage: /^image\//.test(m.type), isVideo: /^video\//.test(m.type),
+        thumbEl: this.mediaEl(m, { style: { position: 'static' } }),
+        kind: (m.type || '').split('/')[1] || 'file',
+        size: (m.size / 1048576).toFixed(m.size > 1048576 ? 1 : 2) + ' MB',
+        remove: () => this.removeMedia(m.id),
+        setAlt: (e) => this.setMediaAlt(m.id, e.target.value)
+      })),
+      mediaSummary: st.media.length + ' file' + (st.media.length === 1 ? '' : 's') + ' in the library',
+      slotSummary: (function (s) { const filled = s.filter(x => x.filled).length; return filled + ' of ' + s.length + ' filled'; })(this.slots().map(x => ({ filled: !!this.get(x.path) }))),
+      slotList: this.slots().map(sl => {
+        const m = this.mediaById(this.get(sl.path));
+        return {
+          label: sl.label, hint: sl.where + ' · ' + sl.hint, ratio: sl.ratio, value: this.get(sl.path) || '',
+          thumbEl: this.mediaEl(m, { style: { position: 'absolute', inset: 0 } }),
+          border: m ? 'rgba(255,255,255,.09)' : 'rgba(255,90,31,.4)',
+          scrim: m ? 'linear-gradient(180deg,rgba(10,10,10,.1),rgba(10,10,10,.62))' : 'transparent',
+          tag: m ? (m.name.length > 22 ? m.name.slice(0, 21) + '…' : m.name) : 'Empty',
+          tagColor: m ? 'rgba(242,240,236,.9)' : acc,
+          action: m ? 'Click to replace' : 'Click to upload',
+          options: this.mediaOptions(),
+          onPick: (e) => this.set(sl.path, e.target.value),
+          upload: (e) => this.addFiles(e.target.files, sl.path)
+        };
+      }),
+      onPickFiles: (e) => this.addFiles(e.target.files),
+      onDragOver: (e) => { e.preventDefault(); if (!st.dragging) this.setState({ dragging: true }); },
+      onDrop: (e) => { e.preventDefault(); this.setState({ dragging: false }); this.addFiles(e.dataTransfer.files); },
+      dropBorder: st.dragging ? acc : 'rgba(255,255,255,.22)',
+      dropBg: st.dragging ? 'rgba(255,90,31,.07)' : 'transparent',
+      exportConfig: this.exportConfig, importConfig: this.importConfig, resetConfig: this.resetConfig
+    };
+  }
+}
+</script>
+</body>
+</html>
