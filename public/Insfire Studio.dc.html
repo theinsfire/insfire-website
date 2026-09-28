@@ -1364,6 +1364,7 @@ class Component extends DCLogic {
       });
     }
     if (store.hero && store.hero.youtubeUrl === undefined) store.hero.youtubeUrl = '';
+    if (Array.isArray(store.projects)) store.projects.forEach(p => { if (p.youtubeUrl === undefined) p.youtubeUrl = ''; });
     if (!store.business) store.business = defaults().business;
     if (!store.analytics) store.analytics = defaults().analytics;
     if (!store.pageSeo || !store.pageSeo.length) store.pageSeo = defaults().pageSeo;
@@ -1545,6 +1546,28 @@ class Component extends DCLogic {
   }
 
   // Every media position the live website can render, in page order.
+  projectFilm(yt, m, title, playing) {
+    const fill = { position: 'absolute', inset: 0, width: '100%', height: '100%', border: 0, display: 'block' };
+    if (playing) return React.createElement('iframe', {
+      key: 'pf' + yt,
+      src: 'https://www.youtube-nocookie.com/embed/' + yt + '?autoplay=1&rel=0&modestbranding=1&playsinline=1&iv_load_policy=3',
+      title: title || 'Insfire film', allowFullScreen: true, frameBorder: '0',
+      referrerPolicy: 'strict-origin-when-cross-origin',
+      allow: 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share',
+      style: fill
+    });
+    const acc = this.state.store.brand.accent;
+    const poster = m ? this.mediaEl(m, { alt: title })
+      : React.createElement('img', { src: 'https://i.ytimg.com/vi/' + yt + '/hqdefault.jpg', alt: title || '', loading: 'lazy', style: Object.assign({}, fill, { objectFit: 'cover' }) });
+    return React.createElement('button', {
+      key: 'pp' + yt, type: 'button', 'aria-label': 'Play ' + (title || 'film'),
+      onClick: (e) => { e.preventDefault(); this.setState({ playingYt: yt }); },
+      style: Object.assign({}, fill, { padding: 0, cursor: 'pointer', background: '#111' })
+    }, poster,
+      React.createElement('span', { style: { position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,.45), rgba(0,0,0,0) 55%)' } }),
+      React.createElement('span', { style: { position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%,-50%)', width: 'clamp(52px,6vw,76px)', height: 'clamp(52px,6vw,76px)', borderRadius: '50%', background: acc, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 6px 24px rgba(0,0,0,.35)' } },
+        React.createElement('span', { style: { width: 0, height: 0, marginLeft: '4px', borderTop: '10px solid transparent', borderBottom: '10px solid transparent', borderLeft: '16px solid #0a0a0a' } })));
+  }
   slots() {
     const S = this.state.store;
     const list = [{ path: 'hero.mediaId', label: 'Hero background image', hint: 'Used when no hero YouTube link · 16:9', ratio: '16/9', where: 'Hero' }];
@@ -2174,13 +2197,14 @@ class Component extends DCLogic {
     }
 
     if (t === 'Projects') {
-      out.help = 'These are the work items shown in “Stories we’ve told” on the homepage. Title, client, category, year and location are the text under each image. Reorder with the arrows, hide with the Visible switch.';
+      out.help = 'These are the work items shown in “Stories we’ve told” on the homepage. Title, client, category, year and location are the text under each image. Add a YouTube link to make a project playable — the film plays right on the card, so large video files never need uploading. Reorder with the arrows, hide with the Visible switch.';
       out.lists = [{ title: 'Projects', addLabel: '+ New project',
-        onAdd: () => this.set('projects', [{ title: 'New project', client: '', category: '', year: String(new Date().getFullYear()), location: '', mediaId: '', featured: false, visible: true }].concat(S.projects)),
+        onAdd: () => this.set('projects', [{ title: 'New project', client: '', category: '', year: String(new Date().getFullYear()), location: '', youtubeUrl: '', mediaId: '', featured: false, visible: true }].concat(S.projects)),
         rows: S.projects.map((p, i) => this.listRow('projects', i, p.title || 'Untitled', [
           F('text', 'Title', 'projects.' + i + '.title'), F('text', 'Client', 'projects.' + i + '.client'),
           F('text', 'Category', 'projects.' + i + '.category'), F('text', 'Year', 'projects.' + i + '.year'), F('text', 'Location', 'projects.' + i + '.location'),
-          this.f('select', 'Media', 'projects.' + i + '.mediaId', media),
+          F('text', 'YouTube link', 'projects.' + i + '.youtubeUrl', { hint: 'optional — plays on the card, on your site' }),
+          this.f('select', 'Cover image', 'projects.' + i + '.mediaId', { isSelect: true, options: media.options, hint: 'shown before play · YouTube thumbnail used if empty' }),
           F('toggle', 'Featured', 'projects.' + i + '.featured'), F('toggle', 'Visible', 'projects.' + i + '.visible')
         ])) }];
     }
@@ -2503,10 +2527,11 @@ class Component extends DCLogic {
       workCount: shown.length + ' selected project' + (shown.length === 1 ? '' : 's'),
       workItems: ordered.slice(0, 6).map((p, i) => {
         const m = this.mediaById(p.mediaId);
+        const yt = youtubeId(p.youtubeUrl);
         return {
           span: spans[i] || 6, ratio: ratios[i] || '4/3', align: i === 2 ? 'end' : 'start',
-          hasMedia: !!m, noMedia: !m, mediaUrl: m ? m.url : '', alt: m ? (m.alt || p.title) : '',
-          mediaEl: this.mediaEl(m, { alt: p.title }),
+          hasMedia: !!m || !!yt, noMedia: !m && !yt, mediaUrl: m ? m.url : '', alt: m ? (m.alt || p.title) : '',
+          mediaEl: yt ? this.projectFilm(yt, m, p.title, st.playingYt === yt) : this.mediaEl(m, { alt: p.title }),
           placeholder: (p.category || 'project') + ' · upload media in CMS',
           featured: !!p.featured, title: p.title,
           meta: [p.client, p.category].filter(Boolean).join(' · '),
