@@ -156,6 +156,17 @@ input,textarea,select,button{font-family:Poppins,system-ui,sans-serif}
 </div>
 </section>
 
+<section id="clients" data-nav="dark" style="order:{{ sec.clients.order }};display:{{ clientsDisplay }};background:#0a0a0a;padding:calc(clamp(26px,3.6vw,48px) * var(--ss)) var(--pad) calc(clamp(34px,4.6vw,64px) * var(--ss))">
+<div style="max-width:var(--cw);margin:0 auto;display:grid;gap:clamp(16px,2vw,26px)">
+<span style="font-family:ui-monospace,Menlo,monospace;font-size:10.5px;letter-spacing:.3em;text-transform:uppercase;color:var(--accent)">{{ clientsLabel }}</span>
+<div style="display:flex;flex-wrap:wrap;align-items:center;column-gap:clamp(28px,4.4vw,72px);row-gap:clamp(18px,2.4vw,30px)">
+<sc-for list="{{ clients }}" as="c" hint-placeholder-count="0">
+<img src="{{ c.url }}" alt="{{ c.name }}" title="{{ c.name }}" loading="lazy" style="display:block;height:clamp(20px,2.3vw,32px);width:auto;max-width:clamp(96px,12vw,170px);object-fit:contain;filter:grayscale(1) brightness(0) invert(1);opacity:.55;transition:opacity .25s ease,filter .25s ease" style-hover="filter:none;opacity:1">
+</sc-for>
+</div>
+</div>
+</section>
+
 <section id="why" data-nav="dark" style="order:{{ sec.why.order }};display:{{ sec.why.display }};background:#0a0a0a;padding:calc(clamp(88px,13vw,190px) * var(--ss)) var(--pad);border-top:1px solid rgba(255,255,255,.07)">
 <div style="max-width:var(--cw);margin:0 auto">
 <div style="font-family:ui-monospace,Menlo,monospace;font-size:10.5px;letter-spacing:.3em;text-transform:uppercase;color:rgba(242,240,236,.38);margin-bottom:clamp(34px,6vw,74px);display:{{ numbersDisplay }}">{{ sec.why.num }} &mdash; {{ sec.why.label }}</div>
@@ -718,6 +729,18 @@ input,textarea,select,button{font-family:Poppins,system-ui,sans-serif}
 <span style="font-size:11px;line-height:1.4;color:{{ f.statusColor }}">{{ f.status }}</span>
 </div>
 </sc-if>
+<sc-if value="{{ f.isLogo }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;border:1px solid rgba(255,255,255,.1);padding:12px">
+<span style="position:relative;width:96px;aspect-ratio:16/10;overflow:hidden;border:1px solid rgba(255,255,255,.14);background:#0a0a0a;flex-shrink:0;display:flex;align-items:center;justify-content:center;padding:8px">{{ f.thumbEl }}</span>
+<div style="display:grid;gap:7px;flex:1;min-width:160px">
+<label style="cursor:pointer;padding:8px 11px;border:1px dashed rgba(255,255,255,.25);font-size:11px;letter-spacing:.1em;text-transform:uppercase;text-align:center" style-hover="border-color:var(--accent);color:var(--accent)">{{ f.uploadLabel }}<input type="file" accept="image/*" disabled="{{ f.busy }}" onChange="{{ f.onUpload }}" style="display:none"></label>
+<select value="{{ f.photoValue }}" onChange="{{ f.onPick }}" style="width:100%;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);color:#f2f0ec;padding:7px 9px;font-size:12px">
+<sc-for list="{{ f.options }}" as="o" hint-placeholder-count="2"><option value="{{ o.value }}">{{ o.label }}</option></sc-for>
+</select>
+<span style="font-size:11px;line-height:1.4;color:rgba(242,240,236,.5)">{{ f.status }}</span>
+</div>
+</div>
+</sc-if>
 </div>
 </sc-for>
 </div>
@@ -1119,7 +1142,10 @@ function defaults() {
       { category: 'Strategy', title: 'Why most corporate videos fail before the first shot', date: 'Aug 2026', href: '#insights' },
       { category: 'Future', title: 'AI can generate footage. It still can\u2019t find the truth.', date: 'Jul 2026', href: '#insights' }
     ],
+    clientsLabel: 'WORKED WITH',
+    clients: [],
     sections: [
+      { key: 'clients', label: 'Client logos', on: false },
       { key: 'why', label: 'Why it matters', on: true },
       { key: 'services', label: 'How Insfire helps', on: true },
       { key: 'work', label: 'Stories we\u2019ve told', on: true },
@@ -1394,6 +1420,8 @@ class Component extends DCLogic {
         if (!c.photoGroups) c.photoGroups = s ? s.photoGroups : [];
       });
     }
+    if (Array.isArray(store.sections) && !store.sections.some(s => s && s.key === 'clients')) store.sections.unshift({ key: 'clients', label: 'Client logos', on: false });
+    if (!Array.isArray(store.clients)) store.clients = [];
     delete store.showcaseItems;
     // Case-study pages were removed: drop their leftover fields and SEO record.
     if (Array.isArray(store.projects)) store.projects.forEach(p => { delete p.challenge; delete p.idea; delete p.execution; delete p.result; });
@@ -2136,6 +2164,23 @@ class Component extends DCLogic {
     };
   }
 
+  logoField(i) {
+    const p = 'clients.' + i + '.mediaId';
+    const m = this.mediaById(this.get(p));
+    const busy = !!(this.state.uploading || {})[p];
+    return {
+      label: 'Logo', hint: 'PNG or SVG, transparent', value: '', isLogo: true, isMedia: false, isUpload: false,
+      isText: false, isArea: false, isColor: false, isRange: false, isSelect: false, isToggle: false,
+      options: this.mediaOptions(), min: 0, max: 1, step: 1, display: '', tBg: '', tJustify: '', tKnob: '', thumbs: [],
+      photoValue: this.get(p) || '', onPick: (e) => this.set(p, e.target.value),
+      thumbEl: m ? React.createElement('img', { key: m.id, src: m.url, alt: '', style: { maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', filter: 'grayscale(1) brightness(0) invert(1)', opacity: 0.8 } }) : null,
+      status: m ? 'Preview shows how it appears on the site' : 'No logo yet — this client is skipped on the site',
+      busy, uploadLabel: busy ? 'Uploading…' : m ? 'Replace logo' : 'Upload logo',
+      onUpload: (e) => this.addFiles(e.target.files, p),
+      onChange: () => {}
+    };
+  }
+
   // Showcase data for one category: films and photo groups are nested inside the
   // category, so Corporate media can never reach Wedding.
   showcaseData(key) {
@@ -2165,7 +2210,7 @@ class Component extends DCLogic {
 
   tabs() {
     return {
-      Content: ['Projects', 'Showcase', 'Services', 'Team', 'Insights', 'Media'],
+      Content: ['Projects', 'Showcase', 'Services', 'Team', 'Insights', 'Clients', 'Media'],
       Design: ['Branding', 'Colours', 'Typography', 'Layout', 'Navigation', 'Animations'],
       Site: ['Hero', 'Sections', 'Showcase pages', 'Footer'],
       Search: ['SEO health', 'SEO', 'Business', 'Analytics'],
@@ -2338,6 +2383,12 @@ class Component extends DCLogic {
       out.lists = [{ title: 'Team members', addLabel: '+ Add member', onAdd: () => this.set('team', S.team.concat([{ name: 'New member', role: '', mediaId: '' }])),
         rows: S.team.map((m, i) => this.listRow('team', i, m.name || 'Member', [ F('text', 'Name', 'team.' + i + '.name'), F('text', 'Role', 'team.' + i + '.role') ])) }];
     }
+    if (t === 'Clients') {
+      out.help = 'Logos in the thin “Worked with” strip right under the Hero. Switch it on under Site → Sections once logos are uploaded. Transparent PNG or SVG works best — logos show as white on the site and in full colour on hover. Entries without a logo are skipped.';
+      out.fields = [ F('text', 'Strip label', 'clientsLabel') ];
+      out.lists = [{ title: 'Clients', addLabel: '+ Add client', onAdd: () => this.set('clients', (S.clients || []).concat([{ name: 'New client', mediaId: '' }])),
+        rows: (S.clients || []).map((c, i) => this.listRow('clients', i, c.name || 'Client', [ F('text', 'Name (alt text)', 'clients.' + i + '.name'), this.logoField(i) ])) }];
+    }
     if (t === 'Insights') {
       out.help = 'Articles listed on the homepage. The Insights section is currently switched off under Site → Sections.';
       out.fields = [ F('text', 'Section title', 'insightsTitle') ];
@@ -2406,13 +2457,14 @@ class Component extends DCLogic {
     const st = this.state;
     const S = this.activeStore();
     const acc = S.brand.accent;
-    const visible = S.sections.filter(s => s.on);
+    const visible = S.sections.filter(s => s.on && s.key !== 'clients');
     const sec = {};
     S.sections.forEach((s, i) => {
       sec[s.key] = { order: s.on ? (i + 2) : 99, display: s.on ? 'block' : 'none', label: s.label, num: String(visible.findIndex(v => v.key === s.key) + 1).padStart(2, '0') };
     });
-    ['why', 'services', 'work', 'about', 'team', 'whyus', 'insights'].forEach(k => { if (!sec[k]) sec[k] = { order: 99, display: 'none', label: '', num: '' }; });
+    ['clients', 'why', 'services', 'work', 'about', 'team', 'whyus', 'insights'].forEach(k => { if (!sec[k]) sec[k] = { order: 99, display: 'none', label: '', num: '' }; });
 
+    const clientLogos = (S.clients || []).map(c => ({ c, m: this.mediaById(c.mediaId) })).filter(x => x.m && x.m.url).map(x => ({ name: x.c.name || '', url: x.m.url }));
     const heroMedia = this.mediaById(S.hero.mediaId);
     const heroIsVideo = !!(heroMedia && /^video\//.test(heroMedia.type));
     const heroYt = youtubeId(S.hero.youtubeUrl);
@@ -2663,6 +2715,9 @@ class Component extends DCLogic {
       whyusTitle: S.whyusTitle,
       pillars: S.pillars.map((p, i) => ({ title: p.title, body: p.body, border: i === 0 ? acc : 'rgba(255,255,255,.18)' })),
       insightsTitle: S.insightsTitle, insights: S.insights,
+      clientsLabel: S.clientsLabel || 'WORKED WITH',
+      clients: clientLogos,
+      clientsDisplay: sec.clients.display === 'block' && clientLogos.length ? 'block' : 'none',
       cta: S.cta,
       footer: Object.assign({}, S.footer, { mailto: 'mailto:' + S.footer.email }),
       footerNav: S.footer.nav, socials: S.footer.socials,
