@@ -862,6 +862,12 @@ input,textarea,select,button{font-family:Poppins,system-ui,sans-serif}
 <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:baseline;justify-content:space-between;margin-bottom:14px">
 <span style="font-family:ui-monospace,Menlo,monospace;font-size:10.5px;letter-spacing:.22em;text-transform:uppercase;color:rgba(242,240,236,.45)">Website media slots &mdash; {{ slotSummary }}</span>
 </div>
+<sc-if value="{{ hasLegacy }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;border:1px solid var(--accent);padding:14px 16px;margin-bottom:18px">
+<span style="flex:1;min-width:220px;font-size:13px;line-height:1.5;text-wrap:pretty">{{ legacyNote }}</span>
+<span onClick="{{ migrateLegacy }}" style="cursor:pointer;display:inline-flex;align-items:center;min-height:40px;padding:0 16px;background:var(--accent);color:#0a0a0a;font-weight:600;font-size:11.5px;letter-spacing:.1em;text-transform:uppercase" style-hover="background:#fff">{{ legacyAction }}</span>
+</div>
+</sc-if>
 <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,230px),1fr));gap:14px;margin-bottom:30px">
 <sc-for list="{{ slotList }}" as="sl" hint-placeholder-count="8">
 <div style="border:1px solid {{ sl.border }};display:grid">
@@ -871,11 +877,22 @@ input,textarea,select,button{font-family:Poppins,system-ui,sans-serif}
 <span style="font-family:ui-monospace,Menlo,monospace;font-size:9.5px;letter-spacing:.2em;text-transform:uppercase;color:{{ sl.tagColor }}">{{ sl.tag }}</span>
 <span style="font-size:11px;color:rgba(242,240,236,.55)">{{ sl.action }}</span>
 </span>
-<input type="file" accept="image/*" onChange="{{ sl.upload }}" style="display:none">
+<input type="file" accept="image/*" disabled="{{ sl.busy }}" onChange="{{ sl.upload }}" style="display:none">
 </label>
 <div style="padding:10px 11px;display:grid;gap:8px">
 <div style="font-size:12.5px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ sl.label }}</div>
 <div style="font-family:ui-monospace,Menlo,monospace;font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:rgba(242,240,236,.38)">{{ sl.hint }}</div>
+<sc-if value="{{ sl.isHero }}" hint-placeholder-val="{{ false }}">
+<div style="display:grid;gap:6px;padding-bottom:4px;border-bottom:1px solid rgba(255,255,255,.08)">
+<span style="font-size:11px;color:rgba(242,240,236,.6)">YouTube link &mdash; takes priority over the photo</span>
+<div style="display:flex;gap:6px;align-items:center">
+<input type="text" value="{{ sl.ytValue }}" onChange="{{ sl.onYt }}" placeholder="Paste a YouTube link" style="flex:1;min-width:0;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);color:#f2f0ec;padding:7px 9px;font-size:12px">
+<span onClick="{{ sl.clearYt }}" style="display:{{ sl.ytClearDisplay }};cursor:pointer;font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:rgba(242,240,236,.5)" style-hover="color:#ff6b6b">Clear</span>
+</div>
+<span style="font-size:11px;line-height:1.4;color:{{ sl.ytStatusColor }}">{{ sl.ytStatus }}</span>
+<span style="font-size:11px;color:rgba(242,240,236,.6);margin-top:4px">Photo</span>
+</div>
+</sc-if>
 <select value="{{ sl.value }}" onChange="{{ sl.onPick }}" style="width:100%;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);color:#f2f0ec;padding:7px 9px;font-size:12px">
 <sc-for list="{{ sl.options }}" as="o" hint-placeholder-count="2"><option value="{{ o.value }}">{{ o.label }}</option></sc-for>
 </select>
@@ -884,7 +901,7 @@ input,textarea,select,button{font-family:Poppins,system-ui,sans-serif}
 </sc-for>
 </div>
 <label onDragOver="{{ onDragOver }}" onDrop="{{ onDrop }}" style="display:block;cursor:pointer;border:1px dashed {{ dropBorder }};padding:44px 20px;text-align:center;margin-bottom:20px;background:{{ dropBg }}">
-<div style="font-weight:500;font-size:15px">Drop images here &mdash; or click to choose files</div>
+<div style="font-weight:500;font-size:15px">{{ dropLabel }}</div>
 <div style="font-family:ui-monospace,Menlo,monospace;font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:rgba(242,240,236,.42);margin-top:9px">jpg &middot; png &middot; webp &middot; svg &mdash; fills the empty slots above in order. Films use YouTube links.</div>
 <input type="file" multiple="{{ true }}" accept="image/*" onChange="{{ onPickFiles }}" style="display:none">
 </label>
@@ -925,7 +942,9 @@ input,textarea,select,button{font-family:Poppins,system-ui,sans-serif}
 </x-dc>
 <script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1440}}">
 const STORE_KEY = 'insfire.site.v1';
-const DB_NAME = 'insfire-media';
+const DB_NAME = 'insfire-media'; // legacy — read only, for moving old uploads to the cloud
+const MEDIA_BUCKET = 'media';
+const MAX_UPLOAD = 10 * 1048576;
 const AUTH_KEY = 'insfire.auth.v1';
 const SESSION_KEY = 'insfire.session.v1';
 const IDLE_MS = 30 * 60 * 1000;
@@ -1126,6 +1145,7 @@ function defaults() {
       { label: 'Showcase', href: '#showcase' },
       { label: 'About', href: '#about' }, { label: 'Contact', href: '#contact' } ],
       socials: [ { label: 'Instagram', url: 'https://www.instagram.com/insfirestudio/' }, { label: 'Facebook', url: 'https://www.facebook.com/share/175BA15PGt/' } ] },
+    media: [],
     seo: { title: 'Insfire Studio — Ignite What Matters', description: 'Insfire Studio is a creative storytelling partner in Kota Kinabalu, helping organisations communicate vision, people and purpose through film, photography and digital experiences.', ogMediaId: '', canonical: 'https://insfire.org/', robots: 'index, follow',
       siteName: 'Insfire Studio', twitterCard: 'summary_large_image', ogType: 'website' },
     business: {
@@ -1149,7 +1169,7 @@ function defaults() {
 const FONTS = ['Poppins', 'Space Grotesk', 'DM Sans', 'Archivo', 'Instrument Serif', 'Playfair Display', 'Georgia', 'system-ui'];
 
 class Component extends DCLogic {
-  state = { screen: 'home', tab: 'Projects', store: defaults(), media: [], dragging: false, saved: 'Loaded', scCat: 'corporate', cmsCat: 0, lightbox: null, narrow: (typeof window !== 'undefined' && window.innerWidth < 640),
+  state = { screen: 'home', tab: 'Projects', store: defaults(), media: [], legacyMedia: [], uploading: {}, dragging: false, saved: 'Loaded', scCat: 'corporate', cmsCat: 0, lightbox: null, narrow: (typeof window !== 'undefined' && window.innerWidth < 640),
     authed: false, loginOpen: false, loginUser: '', loginPass: '', showPass: false, loginError: '', tries: 0, lockedUntil: 0, mustChange: false,
     acct: { user: '', cur: '', next: '', confirm: '', msg: '', err: '' }, navLight: false,
     // Mobile header: `mobile` mirrors the 880px breakpoint the header CTA already
@@ -1365,6 +1385,7 @@ class Component extends DCLogic {
     }
     if (store.hero && store.hero.youtubeUrl === undefined) store.hero.youtubeUrl = '';
     if (Array.isArray(store.projects)) store.projects.forEach(p => { if (p.youtubeUrl === undefined) p.youtubeUrl = ''; });
+    if (!Array.isArray(store.media)) store.media = [];
     if (!store.business) store.business = defaults().business;
     if (!store.analytics) store.analytics = defaults().analytics;
     if (!store.pageSeo || !store.pageSeo.length) store.pageSeo = defaults().pageSeo;
@@ -1484,7 +1505,9 @@ class Component extends DCLogic {
     return path.split('.').reduce((o, k) => (o == null ? o : o[k]), this.state.store);
   }
 
-  // ---------- media (IndexedDB) ----------
+  // ---------- media (Supabase Storage) ----------
+  // The library index lives in the content JSON (store.media), so the published
+  // row carries every public URL. IndexedDB is only read to move old uploads up.
   db() {
     if (this._dbp) return this._dbp;
     this._dbp = new Promise((res, rej) => {
@@ -1495,55 +1518,92 @@ class Component extends DCLogic {
     });
     return this._dbp;
   }
+  async idbAll() {
+    const db = await this.db();
+    return new Promise((res, rej) => { const tx = db.transaction('files', 'readonly').objectStore('files').getAll(); tx.onsuccess = () => res(tx.result || []); tx.onerror = () => rej(tx.error); });
+  }
   async loadMedia() {
     try {
-      const db = await this.db();
-      const items = await new Promise((res, rej) => {
-        const tx = db.transaction('files', 'readonly').objectStore('files').getAll();
-        tx.onsuccess = () => res(tx.result || []); tx.onerror = () => rej(tx.error);
-      });
-      const media = items.map(it => ({ id: it.id, name: it.name, type: it.type, size: it.size, alt: it.alt || '', url: URL.createObjectURL(it.blob) }));
-      this.setState({ media });
-    } catch (e) { /* IndexedDB unavailable */ }
+      const items = await this.idbAll();
+      (this.state.legacyMedia || []).forEach(m => URL.revokeObjectURL(m.url));
+      this.setState({ legacyMedia: items.map(it => ({ id: it.id, name: it.name, type: it.type, size: it.size, alt: it.alt || '', url: URL.createObjectURL(it.blob), legacy: true })) });
+    } catch (e) { /* IndexedDB unavailable — nothing to migrate */ }
   }
-  // assignTo: a store path to fill with the first upload. When omitted, new
-  // uploads flow into whichever website slots are still empty, in order.
+  library() { return this.activeStore().media || []; }
+  setUploading(key, n) { this.setState(s => ({ uploading: Object.assign({}, s.uploading, { [key]: n }) })); }
+  async uploadToStorage(file, id) {
+    if (!this._sb || !this.state.sbSession) throw new Error('sign in with the admin email to upload');
+    const ext = ((file.name || '').split('.').pop() || 'img').toLowerCase().replace(/[^a-z0-9]/g, '') || 'img';
+    const path = id + '.' + ext;
+    const { error } = await this._sb.storage.from(MEDIA_BUCKET).upload(path, file, { contentType: file.type || undefined, cacheControl: '31536000', upsert: false });
+    if (error) throw error;
+    const { data } = this._sb.storage.from(MEDIA_BUCKET).getPublicUrl(path);
+    return { id, name: file.name, type: file.type, size: file.size, alt: '', url: data.publicUrl, path };
+  }
+  slotFilled(sl) { return !!this.get(sl.path) || (sl.path === 'hero.mediaId' && !!youtubeId(this.state.store.hero.youtubeUrl)); }
+  // assignTo: a store path to fill with the first upload. appendTo: a gallery
+  // array to extend. Neither: uploads fill the empty website slots in order.
   async addFiles(fileList, assignTo, appendTo) {
-    const files = Array.from(fileList || []);
-    if (!files.length) return;
-    const db = await this.db();
-    const ids = [];
+    const all = Array.from(fileList || []);
+    const files = all.filter(f => /^image\//.test(f.type) && f.size <= MAX_UPLOAD);
+    const skipped = all.length - files.length;
+    if (!files.length) { this.setState({ saved: all.length ? 'Images only, 10 MB max each' : 'No file chosen' }); return; }
+    const key = assignTo || appendTo || '__lib';
+    this.setUploading(key, files.length);
+    this.setState({ saved: 'Uploading ' + files.length + ' image' + (files.length === 1 ? '' : 's') + '…' });
+    const recs = []; let err = '';
     for (const f of files) {
       const id = 'm' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
-      ids.push(id);
-      const rec = { id, name: f.name, type: f.type, size: f.size, alt: '', blob: f };
-      await new Promise((res, rej) => { const r = db.transaction('files', 'readwrite').objectStore('files').put(rec); r.onsuccess = res; r.onerror = () => rej(r.error); });
+      try { recs.push(await this.uploadToStorage(f, id)); } catch (e) { err = (e && e.message) || 'upload failed'; }
     }
-    let note = files.length + ' file(s) uploaded';
-    if (appendTo) {
-      this.set(appendTo, (this.get(appendTo) || []).concat(ids));
-      note = files.length + ' added to the gallery';
-    } else if (assignTo) {
-      this.set(assignTo, ids[0]);
-      note = 'Uploaded and placed on the website';
-    } else {
-      const empty = this.slots().filter(s => !this.get(s.path));
+    this.setUploading(key, 0);
+    if (!recs.length) { this.setState({ saved: 'Upload failed — ' + err }); return; }
+    const store = JSON.parse(JSON.stringify(this.state.store));
+    const put = (path, val) => { const p = path.split('.'); let n = store; for (let j = 0; j < p.length - 1; j++) n = n[p[j]]; n[p[p.length - 1]] = val; };
+    store.media = (store.media || []).concat(recs);
+    const ids = recs.map(r => r.id);
+    let note = recs.length + ' uploaded';
+    if (appendTo) { put(appendTo, (this.get(appendTo) || []).concat(ids)); note = recs.length + ' added to the gallery'; }
+    else if (assignTo) { put(assignTo, ids[0]); note = 'Uploaded and placed on the website'; }
+    else {
+      const empty = this.slots().filter(sl => !this.slotFilled(sl));
       const n = Math.min(empty.length, ids.length);
-      if (n) {
-        const store = JSON.parse(JSON.stringify(this.state.store));
-        for (let i = 0; i < n; i++) {
-          const parts = empty[i].path.split('.');
-          let node = store;
-          for (let j = 0; j < parts.length - 1; j++) node = node[parts[j]];
-          node[parts[parts.length - 1]] = ids[i];
-        }
-        this.save(store);
-        note = files.length + ' uploaded — ' + n + ' placed on the website';
-      }
+      for (let i = 0; i < n; i++) put(empty[i].path, ids[i]);
+      if (n) note = recs.length + ' uploaded — ' + n + ' placed on the website';
     }
+    if (recs.length < files.length) note += ' · ' + (files.length - recs.length) + ' failed: ' + err;
+    if (skipped) note += ' · ' + skipped + ' skipped (images only, 10 MB max)';
+    this.save(store);
     this.setState({ saved: note });
-    this.loadMedia();
   }
+  // One-off: push images that only exist in this browser up to Storage, keeping
+  // their ids so every slot that already points at them keeps working.
+  migrateLegacy = async () => {
+    const legacy = this.state.legacyMedia || [];
+    if (!legacy.length || (this.state.uploading || {}).__legacy) return;
+    this.setUploading('__legacy', legacy.length);
+    let items = [];
+    try { items = await this.idbAll(); } catch (e) { items = []; }
+    const recs = []; let err = '';
+    for (const it of items) {
+      try {
+        const r = await this.uploadToStorage(new File([it.blob], it.name, { type: it.type }), it.id);
+        r.alt = it.alt || '';
+        recs.push(r);
+        const db = await this.db();
+        await new Promise((res) => { const q = db.transaction('files', 'readwrite').objectStore('files').delete(it.id); q.onsuccess = res; q.onerror = res; });
+      } catch (e) { err = (e && e.message) || 'upload failed'; }
+    }
+    this.setUploading('__legacy', 0);
+    if (recs.length) {
+      const store = JSON.parse(JSON.stringify(this.state.store));
+      const have = new Set((store.media || []).map(m => m.id));
+      store.media = (store.media || []).concat(recs.filter(r => !have.has(r.id)));
+      this.save(store);
+    }
+    this.setState({ saved: recs.length + ' moved to cloud storage' + (err ? ' · some failed: ' + err : '') });
+    this.loadMedia();
+  };
 
   // Every media position the live website can render, in page order.
   projectFilm(yt, m, title, playing) {
@@ -1570,36 +1630,46 @@ class Component extends DCLogic {
   }
   slots() {
     const S = this.state.store;
-    const list = [{ path: 'hero.mediaId', label: 'Hero background image', hint: 'Used when no hero YouTube link · 16:9', ratio: '16/9', where: 'Hero' }];
+    const list = [{ path: 'hero.mediaId', label: 'Hero background', hint: 'YouTube film or photo · 16:9', ratio: '16/9', where: 'Hero' }];
     S.projects.forEach((p, i) => {
-      list.push({ path: 'projects.' + i + '.mediaId', label: p.title || 'Project ' + (i + 1), hint: (p.visible === false ? 'hidden · ' : '') + (p.category || 'project') + ' thumbnail', ratio: '16/10', where: 'Stories we’ve told' });
+      list.push({ path: 'projects.' + i + '.mediaId', label: p.title || 'Project ' + (i + 1), hint: (p.visible === false ? 'hidden · ' : '') + (p.category || 'project') + ' cover' + (youtubeId(p.youtubeUrl) ? ' · YouTube thumbnail if empty' : ''), ratio: '16/10', where: 'Stories we’ve told' });
     });
     S.team.forEach((t, i) => {
       list.push({ path: 'team.' + i + '.mediaId', label: t.name || 'Team member ' + (i + 1), hint: 'Portrait · 3:4', ratio: '3/4', where: 'Behind the fire' });
     });
     S.showcaseCategories.forEach((c, i) => {
-      list.push({ path: 'showcaseCategories.' + i + '.heroMediaId', label: c.label + ' hero', hint: 'Image or video · 16:9', ratio: '16/9', where: 'Showcase' });
-      list.push({ path: 'showcaseCategories.' + i + '.cardMediaId', label: c.label + ' landing card', hint: 'Image or video · 16:9', ratio: '16/9', where: 'Showcase landing' });
+      list.push({ path: 'showcaseCategories.' + i + '.heroMediaId', label: c.label + ' hero', hint: 'Image · 16:9', ratio: '16/9', where: 'Showcase' });
+      list.push({ path: 'showcaseCategories.' + i + '.cardMediaId', label: c.label + ' landing card', hint: 'Image · 16:9 · uses hero if empty', ratio: '16/9', where: 'Showcase landing' });
     });
-    list.push({ path: 'seo.ogMediaId', label: 'Social share image', hint: 'Link previews · 1200×630', ratio: '16/9', where: 'SEO' });
+    list.push({ path: 'seo.ogMediaId', label: 'Default social share image', hint: 'Link previews · 1200×630', ratio: '16/9', where: 'SEO' });
+    (S.pageSeo || []).forEach((p, i) => {
+      list.push({ path: 'pageSeo.' + i + '.ogMediaId', label: (p.label || 'Page') + ' share image', hint: 'Uses default if empty · 1200×630', ratio: '16/9', where: 'SEO' });
+    });
     return list;
   }
   async removeMedia(id) {
-    const db = await this.db();
-    await new Promise((res) => { const r = db.transaction('files', 'readwrite').objectStore('files').delete(id); r.onsuccess = res; r.onerror = res; });
-    const hit = this.state.media.find(m => m.id === id);
-    if (hit) URL.revokeObjectURL(hit.url);
-    this.setState({ media: this.state.media.filter(m => m.id !== id) });
+    const i = (this.state.store.media || []).findIndex(m => m.id === id);
+    if (i < 0) return;
+    const m = this.state.store.media[i];
+    if (!window.confirm('Delete “' + m.name + '”? The file is removed from storage straight away, including from the live site if it is used there.')) return;
+    if (m.path && this._sb) {
+      const { error } = await this._sb.storage.from(MEDIA_BUCKET).remove([m.path]);
+      if (error) { this.setState({ saved: 'Delete failed — ' + error.message }); return; }
+    }
+    const store = JSON.parse(JSON.stringify(this.state.store));
+    store.media.splice(i, 1);
+    this.save(store);
+    this.setState({ saved: 'Deleted ' + m.name });
   }
-  async setMediaAlt(id, alt) {
-    const db = await this.db();
-    const rec = await new Promise((res) => { const r = db.transaction('files', 'readonly').objectStore('files').get(id); r.onsuccess = () => res(r.result); r.onerror = () => res(null); });
-    if (!rec) return;
-    rec.alt = alt;
-    await new Promise((res) => { const r = db.transaction('files', 'readwrite').objectStore('files').put(rec); r.onsuccess = res; r.onerror = res; });
-    this.setState({ media: this.state.media.map(m => m.id === id ? Object.assign({}, m, { alt }) : m) });
+  setMediaAlt(id, alt) {
+    const i = (this.state.store.media || []).findIndex(m => m.id === id);
+    if (i >= 0) this.set('media.' + i + '.alt', alt);
   }
-  mediaById(id) { return this.state.media.find(m => m.id === id) || null; }
+  mediaById(id) {
+    if (!id) return null;
+    return this.library().find(m => m.id === id)
+      || (this.state.screen === 'cms' ? (this.state.legacyMedia || []).find(m => m.id === id) : null) || null;
+  }
 
   // Media elements are built here (never as src="{{ hole }}" in markup, which
   // would fire a failed request for the literal placeholder text mid-stream).
@@ -1794,7 +1864,7 @@ class Component extends DCLogic {
       if (dupD) issues.push('duplicate description');
       return { label: p.label, slug: p.slug, issues };
     });
-    const media = this.state.media;
+    const media = this.state.store.media || [];
     const noAlt = media.filter(m => !m.alt).length;
     const b = S.business || {};
     const an = S.analytics || {};
@@ -2027,7 +2097,7 @@ class Component extends DCLogic {
   }
 
   ratioFor(i) { return ['3/4', '1/1', '4/5', '1/1', '4/3', '3/4'][i % 6]; }
-  mediaOptions() { return [{ value: '', label: '— none (placeholder) —' }].concat(this.state.media.map(m => ({ value: m.id, label: m.name }))); }
+  mediaOptions() { return [{ value: '', label: '— none (placeholder) —' }].concat((this.state.store.media || []).map(m => ({ value: m.id, label: m.name }))); }
   listRow(path, i, heading, fields) {
     const arr = this.get(path);
     const move = (d) => () => {
@@ -2095,12 +2165,10 @@ class Component extends DCLogic {
       ];
     }
     if (t === 'Hero') {
-      out.help = 'The hero background can be a YouTube film (plays muted and looping, with no controls and no link out) or an uploaded image. If both are set, the YouTube film wins. Overlay darkens whatever is behind the type.';
+      out.help = 'Hero copy and buttons. The background (YouTube film or photo) is set in one place: Content → Media → Hero background. Overlay darkens whatever is behind the type.';
       out.fields = [
         F('text', 'Eyebrow line', 'hero.eyebrow'), F('text', 'Headline line 1', 'hero.line1'), F('text', 'Headline line 2', 'hero.line2'),
         F('area', 'Supporting text', 'hero.sub'),
-        F('text', 'Hero YouTube link', 'hero.youtubeUrl', { hint: 'plays as a silent background film' }),
-        this.f('select', 'Hero image (used if no link)', 'hero.mediaId', media),
         this.f('range', 'Overlay darkness', 'hero.overlay', { min: 0, max: 90, step: 5, fmt: v => v + '%' }),
         F('text', 'Primary CTA label', 'hero.cta1'), F('text', 'Primary CTA link', 'hero.cta1href'),
         F('text', 'Secondary CTA label', 'hero.cta2'), F('text', 'Secondary CTA link', 'hero.cta2href'),
@@ -2134,11 +2202,10 @@ class Component extends DCLogic {
       ];
     }
     if (t === 'SEO') {
-      out.help = 'Per-page search settings. Every field here writes straight into the page — title, description, canonical URL, indexing and social preview. Aim for a title under 62 characters and a description of 70–160. Describe what the page offers and where you work; do not stuff keywords.';
+      out.help = 'Per-page search settings. Every field here writes straight into the page — title, description, canonical URL, indexing and social preview. Aim for a title under 62 characters and a description of 70–160. Describe what the page offers and where you work; do not stuff keywords. Social share images are set in Content → Media.';
       out.fields = [
         F('text', 'Site name', 'seo.siteName', { hint: 'used in social previews' }),
         F('text', 'Site base URL', 'seo.canonical', { hint: 'required — e.g. https://insfire.org/' }),
-        this.f('select', 'Default social share image', 'seo.ogMediaId', media),
         F('area', 'Fallback description', 'seo.description', { hint: 'used when a page has none' })
       ];
       out.lists = [{ title: 'Pages', addLabel: '+ Add page',
@@ -2155,7 +2222,6 @@ class Component extends DCLogic {
             F('text', 'URL slug', b + '.slug', { hint: 'e.g. /showcase/corporate' }),
             F('text', 'SEO title', b + '.title', { hint: (p.title || '').length + '/62 — what the page offers + location' }),
             F('area', 'Meta description', b + '.description', { hint: (p.description || '').length + '/160 — what the visitor gets here' }),
-            this.f('select', 'Social share image', b + '.ogMediaId', media),
             F('toggle', 'Allow search engines to index', b + '.index'),
             F('toggle', 'Allow following links', b + '.follow')
           ]);
@@ -2197,14 +2263,13 @@ class Component extends DCLogic {
     }
 
     if (t === 'Projects') {
-      out.help = 'These are the work items shown in “Stories we’ve told” on the homepage. Title, client, category, year and location are the text under each image. Add a YouTube link to make a project playable — the film plays right on the card, so large video files never need uploading. Reorder with the arrows, hide with the Visible switch.';
+      out.help = 'These are the work items shown in “Stories we’ve told” on the homepage. Title, client, category, year and location are the text under each image. Add a YouTube link to make a project playable — the film plays right on the card. Cover images are set in Content → Media. Reorder with the arrows, hide with the Visible switch.';
       out.lists = [{ title: 'Projects', addLabel: '+ New project',
         onAdd: () => this.set('projects', [{ title: 'New project', client: '', category: '', year: String(new Date().getFullYear()), location: '', youtubeUrl: '', mediaId: '', featured: false, visible: true }].concat(S.projects)),
         rows: S.projects.map((p, i) => this.listRow('projects', i, p.title || 'Untitled', [
           F('text', 'Title', 'projects.' + i + '.title'), F('text', 'Client', 'projects.' + i + '.client'),
           F('text', 'Category', 'projects.' + i + '.category'), F('text', 'Year', 'projects.' + i + '.year'), F('text', 'Location', 'projects.' + i + '.location'),
           F('text', 'YouTube link', 'projects.' + i + '.youtubeUrl', { hint: 'optional — plays on the card, on your site' }),
-          this.f('select', 'Cover image', 'projects.' + i + '.mediaId', { isSelect: true, options: media.options, hint: 'shown before play · YouTube thumbnail used if empty' }),
           F('toggle', 'Featured', 'projects.' + i + '.featured'), F('toggle', 'Visible', 'projects.' + i + '.visible')
         ])) }];
     }
@@ -2215,10 +2280,10 @@ class Component extends DCLogic {
         rows: S.services.map((s, i) => this.listRow('services', i, s.title || 'Group', [ F('text', 'Title', 'services.' + i + '.title'), F('area', 'Items (one per line)', 'services.' + i + '.items') ])) }];
     }
     if (t === 'Team') {
-      out.help = 'Team members shown in the “Behind the fire” section. Switch that section on under Site → Sections.';
+      out.help = 'Team members shown in the “Behind the fire” section. Switch that section on under Site → Sections. Portraits are set in Content → Media.';
       out.fields = [ F('text', 'Section title', 'teamTitle'), F('area', 'Section intro', 'teamIntro') ];
       out.lists = [{ title: 'Team members', addLabel: '+ Add member', onAdd: () => this.set('team', S.team.concat([{ name: 'New member', role: '', mediaId: '' }])),
-        rows: S.team.map((m, i) => this.listRow('team', i, m.name || 'Member', [ F('text', 'Name', 'team.' + i + '.name'), F('text', 'Role', 'team.' + i + '.role'), this.f('select', 'Portrait', 'team.' + i + '.mediaId', media) ])) }];
+        rows: S.team.map((m, i) => this.listRow('team', i, m.name || 'Member', [ F('text', 'Name', 'team.' + i + '.name'), F('text', 'Role', 'team.' + i + '.role') ])) }];
     }
     if (t === 'Insights') {
       out.help = 'Articles listed on the homepage. The Insights section is currently switched off under Site → Sections.';
@@ -2227,7 +2292,7 @@ class Component extends DCLogic {
         rows: S.insights.map((a, i) => this.listRow('insights', i, a.title || 'Article', [ F('text', 'Title', 'insights.' + i + '.title'), F('text', 'Category', 'insights.' + i + '.category'), F('text', 'Date', 'insights.' + i + '.date'), F('text', 'Link', 'insights.' + i + '.href') ])) }];
     }
     if (t === 'Account') { out.help = ''; out.fields = []; out.lists = []; return out; }
-    if (t === 'Media') out.help = 'Images are stored in this browser and become selectable in Hero, Projects, Team, Showcase and SEO. Films are not uploaded — they use YouTube links under Content → Showcase.';
+    if (t === 'Media') out.help = 'Every image position on the site has exactly one card here — upload, or pick from the library below. The hero also takes a YouTube link. Images upload to cloud storage; slot changes go live when you Publish. Logos and favicon stay under Design → Branding; photo-group galleries under Content → Showcase.';
 
     if (t === 'Showcase') {
       out.help = 'Films are YouTube embeds — paste a link and it plays inside your page. Photo groups hold uploaded images. Both live inside a Showcase category, so Corporate content can never appear on Wedding. Unpublishing a film removes it from the page and from the film count.';
@@ -2262,7 +2327,7 @@ class Component extends DCLogic {
     }
 
     if (t === 'Showcase pages') {
-      out.help = 'Each Showcase category has its own page settings — hero, intro, section titles, CTA and section visibility. Its films and photo groups are edited under Content → Showcase. Add a category here and it gets its own page automatically.';
+      out.help = 'Each Showcase category has its own page settings — hero, intro, section titles, CTA and section visibility. Its films and photo groups are edited under Content → Showcase; its hero and landing-card images under Content → Media. Add a category here and it gets its own page automatically.';
       out.fields = [ F('text', 'Landing headline', 'showcaseLanding.title'), F('area', 'Landing supporting text', 'showcaseLanding.sub') ];
       out.lists = [{ title: 'Showcase categories', addLabel: '+ Add category',
         onAdd: () => this.set('showcaseCategories', S.showcaseCategories.concat([{ key: 'category-' + (S.showcaseCategories.length + 1), label: 'NEW CATEGORY', blurb: '', cardLabel: 'View', cardMediaId: '', heroTitle: 'NEW CATEGORY', heroSub: '', heroMediaId: '', intro: '', videoTitle: 'FILM', videoDesc: '', photoTitle: 'PHOTOGRAPHY', photoDesc: '', ctaTitle: 'HAVE SOMETHING WORTH IGNITING?', ctaButton: 'Start a conversation', ctaHref: 'https://wa.me/60123164569', showIntro: true, showVideo: true, showPhoto: true, films: [], photoGroups: [] }])),
@@ -2271,9 +2336,7 @@ class Component extends DCLogic {
           return this.listRow('showcaseCategories', i, c.label || 'Category', [
             F('text', 'Menu label', b + '.label'), F('text', 'URL key', b + '.key', { hint: '/showcase/<key>' }),
             F('area', 'Landing blurb', b + '.blurb'), F('text', 'Landing button', b + '.cardLabel'),
-            this.f('select', 'Landing card media', b + '.cardMediaId', media),
             F('text', 'Hero title', b + '.heroTitle'), F('area', 'Hero subtitle', b + '.heroSub'),
-            this.f('select', 'Hero media', b + '.heroMediaId', media),
             F('area', 'Introduction', b + '.intro'),
             F('text', 'Film section title', b + '.videoTitle'), F('area', 'Film section description', b + '.videoDesc'),
             F('text', 'Photography section title', b + '.photoTitle'), F('area', 'Photography section description', b + '.photoDesc'),
@@ -2655,7 +2718,7 @@ class Component extends DCLogic {
       })),
       hasLists: tab.lists.length > 0,
       isMediaTab: st.tab === 'Media',
-      mediaList: st.media.map(m => ({
+      mediaList: (st.store.media || []).map(m => ({
         id: m.id, name: m.name, url: m.url, alt: m.alt,
         isImage: /^image\//.test(m.type), isVideo: /^video\//.test(m.type),
         thumbEl: this.mediaEl(m, { style: { position: 'static' } }),
@@ -2664,18 +2727,39 @@ class Component extends DCLogic {
         remove: () => this.removeMedia(m.id),
         setAlt: (e) => this.setMediaAlt(m.id, e.target.value)
       })),
-      mediaSummary: st.media.length + ' file' + (st.media.length === 1 ? '' : 's') + ' in the library',
-      slotSummary: (function (s) { const filled = s.filter(x => x.filled).length; return filled + ' of ' + s.length + ' filled'; })(this.slots().map(x => ({ filled: !!this.get(x.path) }))),
+      mediaSummary: (st.store.media || []).length + ' image' + ((st.store.media || []).length === 1 ? '' : 's') + ' in cloud storage',
+      hasLegacy: (st.legacyMedia || []).length > 0 && st.screen === 'cms',
+      legacyNote: (st.legacyMedia || []).length + ' older image' + ((st.legacyMedia || []).length === 1 ? ' is' : 's are') + ' only saved in this browser, so visitors can’t see ' + ((st.legacyMedia || []).length === 1 ? 'it' : 'them') + '. Move them to cloud storage — slots using them stay as they are.',
+      legacyAction: (st.uploading || {}).__legacy ? 'Moving…' : 'Move to cloud',
+      migrateLegacy: this.migrateLegacy,
+      dropLabel: (st.uploading || {}).__lib ? 'Uploading ' + st.uploading.__lib + ' image' + (st.uploading.__lib === 1 ? '' : 's') + '…' : 'Drop images here — or click to choose files',
+      slotSummary: (function (s) { const filled = s.filter(x => x.filled).length; return filled + ' of ' + s.length + ' filled'; })(this.slots().map(x => ({ filled: this.slotFilled(x) }))),
       slotList: this.slots().map(sl => {
         const m = this.mediaById(this.get(sl.path));
+        const busy = !!(st.uploading || {})[sl.path];
+        const isHero = sl.path === 'hero.mediaId';
+        const ytRaw = isHero ? (st.store.hero.youtubeUrl || '') : '';
+        const yt = youtubeId(ytRaw);
+        const has = !!m || !!yt;
+        const name = m ? (m.name.length > 22 ? m.name.slice(0, 21) + '…' : m.name) : '';
         return {
           label: sl.label, hint: sl.where + ' · ' + sl.hint, ratio: sl.ratio, value: this.get(sl.path) || '',
-          thumbEl: this.mediaEl(m, { style: { position: 'absolute', inset: 0 } }),
-          border: m ? 'rgba(255,255,255,.09)' : 'rgba(255,90,31,.4)',
-          scrim: m ? 'linear-gradient(180deg,rgba(10,10,10,.1),rgba(10,10,10,.62))' : 'transparent',
-          tag: m ? (m.name.length > 22 ? m.name.slice(0, 21) + '…' : m.name) : 'Empty',
-          tagColor: m ? 'rgba(242,240,236,.9)' : acc,
-          action: m ? 'Click to replace' : 'Click to upload',
+          thumbEl: yt ? React.createElement('img', { key: 'yt' + yt, src: 'https://i.ytimg.com/vi/' + yt + '/hqdefault.jpg', alt: '', style: { position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' } })
+            : this.mediaEl(m, { style: { position: 'absolute', inset: 0 } }),
+          border: busy ? acc : has ? 'rgba(255,255,255,.09)' : 'rgba(255,90,31,.4)',
+          scrim: busy ? 'rgba(10,10,10,.78)' : has ? 'linear-gradient(180deg,rgba(10,10,10,.1),rgba(10,10,10,.62))' : 'transparent',
+          tag: busy ? 'Uploading…' : yt ? 'YouTube film' : m ? name : 'Empty',
+          tagColor: busy || !has ? acc : 'rgba(242,240,236,.9)',
+          action: busy ? 'Saving to cloud storage' : yt ? (m ? 'Photo is the fallback' : 'Click to add a fallback photo') : m ? 'Click to replace' : 'Click to upload',
+          busy,
+          isHero,
+          ytValue: ytRaw,
+          onYt: (e) => this.set('hero.youtubeUrl', e.target.value),
+          clearYt: () => this.set('hero.youtubeUrl', ''),
+          ytClearDisplay: ytRaw ? 'inline' : 'none',
+          ytStatus: ytRaw && !yt ? 'Not a YouTube link — ' + (m ? 'the photo shows instead' : 'the hero stays flat black')
+            : yt ? 'Showing: YouTube film, muted and looping' : m ? 'Showing: photo' : 'Showing: flat black',
+          ytStatusColor: ytRaw && !yt ? '#ff7a5e' : 'rgba(242,240,236,.5)',
           options: this.mediaOptions(),
           onPick: (e) => this.set(sl.path, e.target.value),
           upload: (e) => this.addFiles(e.target.files, sl.path)
