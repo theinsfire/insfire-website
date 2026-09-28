@@ -694,6 +694,30 @@ input,textarea,select,button{font-family:Poppins,system-ui,sans-serif}
 <label style="cursor:pointer;padding:8px 11px;border:1px dashed rgba(255,255,255,.25);font-size:11px;letter-spacing:.1em;text-transform:uppercase;text-align:center" style-hover="border-color:var(--accent);color:var(--accent)">{{ f.uploadLabel }}<input type="file" multiple="{{ true }}" accept="image/*" onChange="{{ f.onUpload }}" style="display:none"></label>
 </div>
 </sc-if>
+<sc-if value="{{ f.isMedia }}" hint-placeholder-val="{{ false }}">
+<div style="display:grid;gap:10px;border:1px solid rgba(255,255,255,.1);padding:12px">
+<div style="display:grid;gap:6px">
+<span style="font-size:11px;color:rgba(242,240,236,.6)">YouTube link &mdash; takes priority over the photo</span>
+<div style="display:flex;gap:8px;align-items:center">
+<input type="text" value="{{ f.ytValue }}" onChange="{{ f.onYt }}" placeholder="Paste a YouTube link" style="flex:1;min-width:0;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);color:#f2f0ec;padding:9px 11px;font-size:13px">
+<span onClick="{{ f.clearYt }}" style="display:{{ f.ytClearDisplay }};cursor:pointer;font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:rgba(242,240,236,.5)" style-hover="color:#ff6b6b">Clear</span>
+</div>
+</div>
+<div style="display:grid;gap:6px">
+<span style="font-size:11px;color:rgba(242,240,236,.6)">{{ f.photoLabel }}</span>
+<div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center">
+<span style="position:relative;width:96px;aspect-ratio:16/10;overflow:hidden;border:1px solid rgba(255,255,255,.14);background:repeating-linear-gradient(118deg,#1b1b1b 0 10px,#232323 10px 20px);flex-shrink:0">{{ f.thumbEl }}</span>
+<div style="display:grid;gap:7px;flex:1;min-width:160px">
+<label style="cursor:pointer;padding:8px 11px;border:1px dashed rgba(255,255,255,.25);font-size:11px;letter-spacing:.1em;text-transform:uppercase;text-align:center" style-hover="border-color:var(--accent);color:var(--accent)">{{ f.uploadLabel }}<input type="file" accept="image/*" disabled="{{ f.busy }}" onChange="{{ f.onUpload }}" style="display:none"></label>
+<select value="{{ f.photoValue }}" onChange="{{ f.onPick }}" style="width:100%;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);color:#f2f0ec;padding:7px 9px;font-size:12px">
+<sc-for list="{{ f.options }}" as="o" hint-placeholder-count="2"><option value="{{ o.value }}">{{ o.label }}</option></sc-for>
+</select>
+</div>
+</div>
+</div>
+<span style="font-size:11px;line-height:1.4;color:{{ f.statusColor }}">{{ f.status }}</span>
+</div>
+</sc-if>
 </div>
 </sc-for>
 </div>
@@ -1631,9 +1655,6 @@ class Component extends DCLogic {
   slots() {
     const S = this.state.store;
     const list = [{ path: 'hero.mediaId', label: 'Hero background', hint: 'YouTube film or photo · 16:9', ratio: '16/9', where: 'Hero', ytPath: 'hero.youtubeUrl', ytMode: 'bg' }];
-    S.projects.forEach((p, i) => {
-      list.push({ path: 'projects.' + i + '.mediaId', label: p.title || 'Project ' + (i + 1), hint: (p.visible === false ? 'hidden · ' : '') + 'YouTube film or photo · ' + (p.category || 'project'), ratio: '16/10', ytPath: 'projects.' + i + '.youtubeUrl', ytMode: 'inline', where: 'Stories we’ve told' });
-    });
     S.team.forEach((t, i) => {
       list.push({ path: 'team.' + i + '.mediaId', label: t.name || 'Team member ' + (i + 1), hint: 'Portrait · 3:4', ratio: '3/4', where: 'Behind the fire' });
     });
@@ -2052,7 +2073,7 @@ class Component extends DCLogic {
   tog(on) { const a = this.state.store.brand.accent; return { tBg: on ? a : 'rgba(255,255,255,.16)', tJustify: on ? 'flex-end' : 'flex-start', tKnob: on ? '#0a0a0a' : 'rgba(242,240,236,.75)' }; }
   f(kind, label, path, extra) {
     const v = this.get(path);
-    const base = { label, hint: (extra && extra.hint) || '', value: v == null ? '' : v, isText: false, isArea: false, isColor: false, isRange: false, isSelect: false, isToggle: false, options: [], min: 0, max: 1, step: 1, display: '', tBg: '', tJustify: '', tKnob: '' };
+    const base = { label, hint: (extra && extra.hint) || '', value: v == null ? '' : v, isMedia: false, isText: false, isArea: false, isColor: false, isRange: false, isSelect: false, isToggle: false, options: [], min: 0, max: 1, step: 1, display: '', tBg: '', tJustify: '', tKnob: '' };
     const o = Object.assign(base, extra || {});
     if (kind === 'text') { o.isText = true; o.onChange = (e) => this.set(path, e.target.value); }
     if (kind === 'area') { o.isArea = true; o.onChange = (e) => this.set(path, e.target.value); }
@@ -2070,7 +2091,7 @@ class Component extends DCLogic {
     const o = opts || {};
     const ids = this.get(path) || [];
     return {
-      label, hint: ids.length ? ids.length + ' file(s)' : 'empty', value: '', isUpload: true,
+      label, hint: ids.length ? ids.length + ' file(s)' : 'empty', value: '', isUpload: true, isMedia: false,
       isText: false, isArea: false, isColor: false, isRange: false, isSelect: false, isToggle: false,
       options: [], min: 0, max: 1, step: 1, display: '', tBg: '', tJustify: '', tKnob: '',
       uploadLabel: ids.length ? '+ Add more files' : '+ Upload files',
@@ -2079,6 +2100,38 @@ class Component extends DCLogic {
         remove: () => { const a = ids.slice(); a.splice(k, 1); this.set(path, a); }
       })),
       onUpload: (e) => this.addFiles(e.target.files, o.assign, o.assign ? null : path),
+      onChange: () => {}
+    };
+  }
+
+  // One project's film-or-photo control: YouTube link first (wins when valid),
+  // photo below (cover before play, or the card image when there is no film).
+  projectMediaField(i) {
+    const b = 'projects.' + i;
+    const ytRaw = this.get(b + '.youtubeUrl') || '';
+    const yt = youtubeId(ytRaw);
+    const m = this.mediaById(this.get(b + '.mediaId'));
+    const busy = !!(this.state.uploading || {})[b + '.mediaId'];
+    const status = ytRaw && !yt ? 'Not a YouTube link — ' + (m ? 'the photo shows instead' : 'the placeholder shows')
+      : yt ? 'Showing: YouTube film, plays on the card when clicked · cover: ' + (m ? 'your photo' : 'YouTube thumbnail')
+      : m ? 'Showing: photo' : 'Showing: empty placeholder';
+    return {
+      label: 'Film or photo', hint: 'YouTube film or photo', value: '', isMedia: true, isUpload: false,
+      isText: false, isArea: false, isColor: false, isRange: false, isSelect: false, isToggle: false,
+      options: this.mediaOptions(), min: 0, max: 1, step: 1, display: '', tBg: '', tJustify: '', tKnob: '', thumbs: [],
+      ytValue: ytRaw,
+      onYt: (e) => this.set(b + '.youtubeUrl', e.target.value),
+      clearYt: () => this.set(b + '.youtubeUrl', ''),
+      ytClearDisplay: ytRaw ? 'inline' : 'none',
+      status, statusColor: ytRaw && !yt ? '#ff7a5e' : 'rgba(242,240,236,.5)',
+      photoLabel: yt ? 'Photo — cover shown before the film plays' : 'Photo — shown when there is no YouTube link',
+      photoValue: this.get(b + '.mediaId') || '',
+      onPick: (e) => this.set(b + '.mediaId', e.target.value),
+      thumbEl: yt && !m ? React.createElement('img', { key: 'yt' + yt, src: 'https://i.ytimg.com/vi/' + yt + '/hqdefault.jpg', alt: '', style: { position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' } })
+        : this.mediaEl(m, { style: { position: 'absolute', inset: 0 } }),
+      busy,
+      uploadLabel: busy ? 'Uploading…' : m ? 'Replace photo' : 'Upload photo',
+      onUpload: (e) => this.addFiles(e.target.files, b + '.mediaId'),
       onChange: () => {}
     };
   }
@@ -2263,12 +2316,13 @@ class Component extends DCLogic {
     }
 
     if (t === 'Projects') {
-      out.help = 'These are the work items shown in “Stories we’ve told” on the homepage. Title, client, category, year and location are the text under each image. Each project’s YouTube film or photo is set in one place: Content → Media. Reorder with the arrows, hide with the Visible switch.';
+      out.help = 'These are the work items shown in “Stories we’ve told” on the homepage. Title, client, category, year and location are the text under each image. Each project’s film or photo is set right here, under “Film or photo”: a YouTube link plays on the card and takes priority; the photo shows when there is no link, and doubles as the cover before the film plays. Reorder with the arrows, hide with the Visible switch.';
       out.lists = [{ title: 'Projects', addLabel: '+ New project',
         onAdd: () => this.set('projects', [{ title: 'New project', client: '', category: '', year: String(new Date().getFullYear()), location: '', youtubeUrl: '', mediaId: '', featured: false, visible: true }].concat(S.projects)),
         rows: S.projects.map((p, i) => this.listRow('projects', i, p.title || 'Untitled', [
           F('text', 'Title', 'projects.' + i + '.title'), F('text', 'Client', 'projects.' + i + '.client'),
           F('text', 'Category', 'projects.' + i + '.category'), F('text', 'Year', 'projects.' + i + '.year'), F('text', 'Location', 'projects.' + i + '.location'),
+          this.projectMediaField(i),
           F('toggle', 'Featured', 'projects.' + i + '.featured'), F('toggle', 'Visible', 'projects.' + i + '.visible')
         ])) }];
     }
@@ -2291,7 +2345,7 @@ class Component extends DCLogic {
         rows: S.insights.map((a, i) => this.listRow('insights', i, a.title || 'Article', [ F('text', 'Title', 'insights.' + i + '.title'), F('text', 'Category', 'insights.' + i + '.category'), F('text', 'Date', 'insights.' + i + '.date'), F('text', 'Link', 'insights.' + i + '.href') ])) }];
     }
     if (t === 'Account') { out.help = ''; out.fields = []; out.lists = []; return out; }
-    if (t === 'Media') out.help = 'Every image position on the site has exactly one card here — upload, or pick from the library below. The hero and every project also take a YouTube link. Images upload to cloud storage; slot changes go live when you Publish. Logos and favicon stay under Design → Branding; photo-group galleries under Content → Showcase.';
+    if (t === 'Media') out.help = 'Every image position on the site has exactly one card here — upload, or pick from the library below. The hero also takes a YouTube link. Project films and photos are set under Content → Projects. Images upload to cloud storage; slot changes go live when you Publish. Logos and favicon stay under Design → Branding; photo-group galleries under Content → Showcase.';
 
     if (t === 'Showcase') {
       out.help = 'Films are YouTube embeds — paste a link and it plays inside your page. Photo groups hold uploaded images. Both live inside a Showcase category, so Corporate content can never appear on Wedding. Unpublishing a film removes it from the page and from the film count.';
