@@ -882,7 +882,7 @@ input,textarea,select,button{font-family:Poppins,system-ui,sans-serif}
 <div style="padding:10px 11px;display:grid;gap:8px">
 <div style="font-size:12.5px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ sl.label }}</div>
 <div style="font-family:ui-monospace,Menlo,monospace;font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:rgba(242,240,236,.38)">{{ sl.hint }}</div>
-<sc-if value="{{ sl.isHero }}" hint-placeholder-val="{{ false }}">
+<sc-if value="{{ sl.hasYtOption }}" hint-placeholder-val="{{ false }}">
 <div style="display:grid;gap:6px;padding-bottom:4px;border-bottom:1px solid rgba(255,255,255,.08)">
 <span style="font-size:11px;color:rgba(242,240,236,.6)">YouTube link &mdash; takes priority over the photo</span>
 <div style="display:flex;gap:6px;align-items:center">
@@ -1540,7 +1540,7 @@ class Component extends DCLogic {
     const { data } = this._sb.storage.from(MEDIA_BUCKET).getPublicUrl(path);
     return { id, name: file.name, type: file.type, size: file.size, alt: '', url: data.publicUrl, path };
   }
-  slotFilled(sl) { return !!this.get(sl.path) || (sl.path === 'hero.mediaId' && !!youtubeId(this.state.store.hero.youtubeUrl)); }
+  slotFilled(sl) { return !!this.get(sl.path) || (!!sl.ytPath && !!youtubeId(this.get(sl.ytPath))); }
   // assignTo: a store path to fill with the first upload. appendTo: a gallery
   // array to extend. Neither: uploads fill the empty website slots in order.
   async addFiles(fileList, assignTo, appendTo) {
@@ -1630,9 +1630,9 @@ class Component extends DCLogic {
   }
   slots() {
     const S = this.state.store;
-    const list = [{ path: 'hero.mediaId', label: 'Hero background', hint: 'YouTube film or photo · 16:9', ratio: '16/9', where: 'Hero' }];
+    const list = [{ path: 'hero.mediaId', label: 'Hero background', hint: 'YouTube film or photo · 16:9', ratio: '16/9', where: 'Hero', ytPath: 'hero.youtubeUrl', ytMode: 'bg' }];
     S.projects.forEach((p, i) => {
-      list.push({ path: 'projects.' + i + '.mediaId', label: p.title || 'Project ' + (i + 1), hint: (p.visible === false ? 'hidden · ' : '') + (p.category || 'project') + ' cover' + (youtubeId(p.youtubeUrl) ? ' · YouTube thumbnail if empty' : ''), ratio: '16/10', where: 'Stories we’ve told' });
+      list.push({ path: 'projects.' + i + '.mediaId', label: p.title || 'Project ' + (i + 1), hint: (p.visible === false ? 'hidden · ' : '') + 'YouTube film or photo · ' + (p.category || 'project'), ratio: '16/10', ytPath: 'projects.' + i + '.youtubeUrl', ytMode: 'inline', where: 'Stories we’ve told' });
     });
     S.team.forEach((t, i) => {
       list.push({ path: 'team.' + i + '.mediaId', label: t.name || 'Team member ' + (i + 1), hint: 'Portrait · 3:4', ratio: '3/4', where: 'Behind the fire' });
@@ -2263,13 +2263,12 @@ class Component extends DCLogic {
     }
 
     if (t === 'Projects') {
-      out.help = 'These are the work items shown in “Stories we’ve told” on the homepage. Title, client, category, year and location are the text under each image. Add a YouTube link to make a project playable — the film plays right on the card. Cover images are set in Content → Media. Reorder with the arrows, hide with the Visible switch.';
+      out.help = 'These are the work items shown in “Stories we’ve told” on the homepage. Title, client, category, year and location are the text under each image. Each project’s YouTube film or photo is set in one place: Content → Media. Reorder with the arrows, hide with the Visible switch.';
       out.lists = [{ title: 'Projects', addLabel: '+ New project',
         onAdd: () => this.set('projects', [{ title: 'New project', client: '', category: '', year: String(new Date().getFullYear()), location: '', youtubeUrl: '', mediaId: '', featured: false, visible: true }].concat(S.projects)),
         rows: S.projects.map((p, i) => this.listRow('projects', i, p.title || 'Untitled', [
           F('text', 'Title', 'projects.' + i + '.title'), F('text', 'Client', 'projects.' + i + '.client'),
           F('text', 'Category', 'projects.' + i + '.category'), F('text', 'Year', 'projects.' + i + '.year'), F('text', 'Location', 'projects.' + i + '.location'),
-          F('text', 'YouTube link', 'projects.' + i + '.youtubeUrl', { hint: 'optional — plays on the card, on your site' }),
           F('toggle', 'Featured', 'projects.' + i + '.featured'), F('toggle', 'Visible', 'projects.' + i + '.visible')
         ])) }];
     }
@@ -2292,7 +2291,7 @@ class Component extends DCLogic {
         rows: S.insights.map((a, i) => this.listRow('insights', i, a.title || 'Article', [ F('text', 'Title', 'insights.' + i + '.title'), F('text', 'Category', 'insights.' + i + '.category'), F('text', 'Date', 'insights.' + i + '.date'), F('text', 'Link', 'insights.' + i + '.href') ])) }];
     }
     if (t === 'Account') { out.help = ''; out.fields = []; out.lists = []; return out; }
-    if (t === 'Media') out.help = 'Every image position on the site has exactly one card here — upload, or pick from the library below. The hero also takes a YouTube link. Images upload to cloud storage; slot changes go live when you Publish. Logos and favicon stay under Design → Branding; photo-group galleries under Content → Showcase.';
+    if (t === 'Media') out.help = 'Every image position on the site has exactly one card here — upload, or pick from the library below. The hero and every project also take a YouTube link. Images upload to cloud storage; slot changes go live when you Publish. Logos and favicon stay under Design → Branding; photo-group galleries under Content → Showcase.';
 
     if (t === 'Showcase') {
       out.help = 'Films are YouTube embeds — paste a link and it plays inside your page. Photo groups hold uploaded images. Both live inside a Showcase category, so Corporate content can never appear on Wedding. Unpublishing a film removes it from the page and from the film count.';
@@ -2737,8 +2736,9 @@ class Component extends DCLogic {
       slotList: this.slots().map(sl => {
         const m = this.mediaById(this.get(sl.path));
         const busy = !!(st.uploading || {})[sl.path];
-        const isHero = sl.path === 'hero.mediaId';
-        const ytRaw = isHero ? (st.store.hero.youtubeUrl || '') : '';
+        const hasYtOption = !!sl.ytPath;
+        const ytRaw = hasYtOption ? (this.get(sl.ytPath) || '') : '';
+        const inline = sl.ytMode === 'inline';
         const yt = youtubeId(ytRaw);
         const has = !!m || !!yt;
         const name = m ? (m.name.length > 22 ? m.name.slice(0, 21) + '…' : m.name) : '';
@@ -2750,15 +2750,15 @@ class Component extends DCLogic {
           scrim: busy ? 'rgba(10,10,10,.78)' : has ? 'linear-gradient(180deg,rgba(10,10,10,.1),rgba(10,10,10,.62))' : 'transparent',
           tag: busy ? 'Uploading…' : yt ? 'YouTube film' : m ? name : 'Empty',
           tagColor: busy || !has ? acc : 'rgba(242,240,236,.9)',
-          action: busy ? 'Saving to cloud storage' : yt ? (m ? 'Photo is the fallback' : 'Click to add a fallback photo') : m ? 'Click to replace' : 'Click to upload',
+          action: busy ? 'Saving to cloud storage' : yt ? (inline ? (m ? 'Photo is the cover before play' : 'Click to add a cover photo') : (m ? 'Photo is the fallback' : 'Click to add a fallback photo')) : m ? 'Click to replace' : 'Click to upload',
           busy,
-          isHero,
+          hasYtOption,
           ytValue: ytRaw,
-          onYt: (e) => this.set('hero.youtubeUrl', e.target.value),
-          clearYt: () => this.set('hero.youtubeUrl', ''),
+          onYt: (e) => this.set(sl.ytPath, e.target.value),
+          clearYt: () => this.set(sl.ytPath, ''),
           ytClearDisplay: ytRaw ? 'inline' : 'none',
-          ytStatus: ytRaw && !yt ? 'Not a YouTube link — ' + (m ? 'the photo shows instead' : 'the hero stays flat black')
-            : yt ? 'Showing: YouTube film, muted and looping' : m ? 'Showing: photo' : 'Showing: flat black',
+          ytStatus: ytRaw && !yt ? 'Not a YouTube link — ' + (m ? 'the photo shows instead' : inline ? 'the placeholder shows' : 'the hero stays flat black')
+            : yt ? (inline ? 'Showing: YouTube film, plays on the card when clicked' + (m ? '' : ' · YouTube thumbnail as cover') : 'Showing: YouTube film, muted and looping') : m ? 'Showing: photo' : (inline ? 'Showing: empty placeholder' : 'Showing: flat black'),
           ytStatusColor: ytRaw && !yt ? '#ff7a5e' : 'rgba(242,240,236,.5)',
           options: this.mediaOptions(),
           onPick: (e) => this.set(sl.path, e.target.value),
